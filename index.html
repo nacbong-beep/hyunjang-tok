@@ -159,7 +159,10 @@
 <div class="app">
   <div class="header">
     <div class="header-top">
+      <div style="display:flex;align-items:center;gap:12px;">
       <div class="logo">현장톡</div>
+      <button onclick="showApiKeyModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:11px;padding:3px 8px;border-radius:10px;cursor:pointer;font-family:inherit;">⚙️ API키</button>
+    </div>
       <div class="header-stats">
         <div class="stat">저장 <span id="total-count">0</span>건</div>
         <div class="stat">할일 <span id="todo-count">0</span>건</div>
@@ -280,9 +283,25 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- API 키 모달 -->
+<div id="api-key-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:400px;">
+    <div style="font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:8px;">Gemini API 키 설정</div>
+    <div style="font-size:13px;color:#888;margin-bottom:16px;line-height:1.6;">
+      AI 분류 기능을 사용하려면 Gemini API 키가 필요해요.<br>
+      <a href="https://aistudio.google.com" target="_blank" style="color:#1a1a2e;">aistudio.google.com</a>에서 무료로 발급받을 수 있어요.
+    </div>
+    <input id="api-key-input" type="text" placeholder="AIza..." style="width:100%;padding:10px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:12px;">
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('api-key-modal').style.display='none'" style="flex:1;padding:10px;border:1px solid #e0e0e0;border-radius:8px;background:#f5f5f0;font-size:13px;cursor:pointer;font-family:inherit;">나중에</button>
+      <button onclick="saveApiKey()" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a1a2e;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">저장하기</button>
+    </div>
+  </div>
+</div>
+
 <script>
-const GEMINI_API_KEY = 'AIzaSyCjb8TEdbN4uzwbpnrzXfO2IefFaAWqbss';
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+let GEMINI_API_KEY = localStorage.getItem('hj_api_key') || '';
+const getGeminiUrl = () => `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
 const TAG_COLORS = {
   '지시사항': { bg: '#E6F1FB', text: '#0C447C' },
@@ -470,7 +489,7 @@ ${list}
 중요한 것만 골라서 JSON 배열만 응답(다른 텍스트 없이):
 [{"index":0,"tag":"지시사항","summary":"펌프카 배치 지시","isTodo":true}]`;
 
-  const res = await fetch(GEMINI_URL, {
+  const res = await fetch(getGeminiUrl(), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -717,6 +736,27 @@ function showToast(msg) {
 
 // 초기화
 updateStats();
+if (!GEMINI_API_KEY) showApiKeyModal();
+
+function showApiKeyModal() {
+  document.getElementById('api-key-modal').style.display = 'flex';
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { alert('API 키를 입력해주세요'); return; }
+  GEMINI_API_KEY = key;
+  localStorage.setItem('hj_api_key', key);
+  document.getElementById('api-key-modal').style.display = 'none';
+  showToast('API 키가 저장됐어요!');
+}
+
+function resetApiKey() {
+  if (!confirm('API 키를 초기화할까요?')) return;
+  GEMINI_API_KEY = '';
+  localStorage.removeItem('hj_api_key');
+  showApiKeyModal();
+}
 </script>
 </body>
 </html>
