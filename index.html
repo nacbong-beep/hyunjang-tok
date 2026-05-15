@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>현장톡</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #f4f3ef;
+    --surface: #ffffff;
+    --primary: #1a1a2e;
+    --primary-light: #2d2d4e;
+    --border: #e8e6e0;
+    --text: #1a1a2e;
+    --text-sub: #888;
+    --text-dim: #bbb;
+    --tag-지시: #E6F1FB; --tag-지시-t: #0C447C;
+    --tag-자재: #EAF3DE; --tag-자재-t: #27500A;
+    --tag-안전: #FAECE7; --tag-안전-t: #7A2B0C;
+    --tag-하자: #FAEEDA; --tag-하자-t: #6B3A02;
+    --tag-일정: #EEEDFE; --tag-일정-t: #26215C;
+    --tag-시공: #FDE8F5; --tag-시공-t: #6B0F4A;
+    --tag-기타: #F1EFE8; --tag-기타-t: #444441;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* 레이아웃 */
+  .app { display: flex; flex-direction: column; min-height: 100vh; max-width: 960px; margin: 0 auto; }
+
+  /* 헤더 */
+  .header { background: var(--primary); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  .logo { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
+  .header-sub { color: rgba(255,255,255,0.5); font-size: 12px; }
+  .header-stats { display: flex; gap: 12px; }
+  .stat { color: rgba(255,255,255,0.7); font-size: 12px; }
+  .stat span { color: #fff; font-weight: 600; }
+
+  /* 탭 */
+  .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .tab { flex: 1; padding: 12px 8px; text-align: center; font-size: 13px; color: var(--text-sub); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; font-family: inherit; font-weight: 500; background: none; border-top: none; border-left: none; border-right: none; }
+  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* 탭 컨텐츠 */
+  .tab-content { display: none; flex: 1; }
+  .tab-content.active { display: block; }
+
+  /* 입력 화면 */
+  .input-section { padding: 16px; }
+  .input-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
+  .input-header { background: var(--primary); padding: 12px 16px; }
+  .input-title { color: #fff; font-size: 14px; font-weight: 600; }
+  .input-sub { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 2px; }
+  .input-body { padding: 16px; }
+  .room-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
+  .room-label { font-size: 13px; color: var(--text-sub); white-space: nowrap; }
+  .room-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--bg); }
+  .paste-area { width: 100%; min-height: 120px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--bg); resize: vertical; line-height: 1.6; }
+  .paste-area::placeholder { color: var(--text-dim); }
+  .input-footer { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+  .char-count { font-size: 12px; color: var(--text-dim); flex: 1; }
+  .analyze-btn { padding: 10px 20px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
+  .analyze-btn:hover { opacity: 0.85; }
+  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* 가이드 */
+  .guide { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .guide-title { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; }
+  .guide-step { font-size: 12px; color: var(--text-sub); line-height: 1.8; }
+
+  /* 로딩 */
+  .loading { text-align: center; padding: 40px 20px; }
+  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text-sub); }
+  .loading-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+  /* 미리보기 */
+  .preview-header { background: var(--primary); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .preview-title { color: #fff; font-size: 14px; font-weight: 600; }
+  .preview-sub { color: rgba(255,255,255,0.6); font-size: 12px; }
+  .preview-actions { display: flex; gap: 8px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .btn-cancel { flex: 1; padding: 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-size: 13px; color: var(--text-sub); cursor: pointer; font-family: inherit; }
+  .btn-save { flex: 2; padding: 9px; border: none; border-radius: 8px; background: var(--primary); font-size: 13px; color: #fff; font-weight: 600; cursor: pointer; font-family: inherit; }
+
+  /* 필터 */
+  .filter-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; gap: 6px; overflow-x: auto; }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; color: var(--text-sub); cursor: pointer; white-space: nowrap; font-family: inherit; transition: all 0.15s; }
+  .filter-chip.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+  /* 메시지 목록 */
+  .list-body { padding: 12px 16px 80px; }
+  .room-group { margin-bottom: 4px; }
+  .room-hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 6px; cursor: pointer; user-select: none; }
+  .room-hdr-left { display: flex; align-items: center; gap: 8px; }
+  .room-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
+  .room-name { font-size: 13px; font-weight: 600; color: var(--primary); }
+  .room-cnt { font-size: 11px; color: var(--text-sub); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; }
+  .room-chevron { font-size: 11px; color: var(--text-dim); transition: transform 0.2s; }
+  .room-chevron.closed { transform: rotate(-90deg); }
+  .room-msgs { }
+  .date-label { font-size: 11px; color: var(--text-dim); font-weight: 500; padding: 6px 2px 4px; letter-spacing: 0.3px; }
+  .msg-card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); padding: 12px; margin-bottom: 6px; }
+  .msg-card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .tag-badge { border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
+  .msg-summary { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+  .msg-content { font-size: 12px; color: var(--text-sub); line-height: 1.5; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .msg-footer { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .msg-sender { font-size: 11px; color: var(--text-dim); }
+  .msg-time { font-size: 11px; color: var(--text-dim); }
+  .msg-actions { display: flex; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
+  .msg-btn { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 11px; color: var(--text-sub); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+  .msg-btn:hover { background: var(--border); }
+  .msg-btn.del { color: #c0392b; border-color: #f5c6c6; }
+
+  /* 할일 */
+  .todo-body { padding: 12px 16px 80px; }
+  .section-title { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 0.3px; }
+  .todo-card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); padding: 12px; margin-bottom: 6px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: opacity 0.15s; }
+  .todo-card.done { opacity: 0.5; }
+  .todo-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+  .todo-check.done { background: var(--primary); border-color: var(--primary); color: #fff; font-size: 11px; }
+  .todo-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .todo-text.done { text-decoration: line-through; color: var(--text-dim); }
+  .todo-meta { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+
+  /* 검색 */
+  .search-top { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; }
+  .search-input { width: 100%; padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: var(--bg); color: var(--text); }
+  .search-input:focus { outline: none; border-color: var(--primary); }
+  .search-filter { display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; }
+  .search-filter::-webkit-scrollbar { display: none; }
+  .result-count { font-size: 11px; color: var(--text-dim); padding: 8px 16px 4px; }
+  .search-body { padding: 0 16px 80px; }
+
+  /* 완료 화면 */
+  .done-box { text-align: center; padding: 60px 20px; }
+  .done-emoji { font-size: 48px; margin-bottom: 12px; }
+  .done-title { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
+  .done-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 4px; }
+  .done-btn { margin-top: 24px; padding: 10px 24px; border: 1px solid var(--primary); border-radius: 10px; background: none; color: var(--primary); font-size: 14px; font-family: inherit; cursor: pointer; }
+
+  /* 빈 화면 */
+  .empty { text-align: center; padding: 60px 20px; }
+  .empty-text { font-size: 15px; color: var(--text-sub); margin-bottom: 6px; }
+  .empty-sub { font-size: 13px; color: var(--text-dim); }
+
+  /* 알림 토스트 */
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">현장톡</div>
+      <div class="header-stats">
+        <div class="stat">저장 <span id="total-count">0</span>건</div>
+        <div class="stat">할일 <span id="todo-count">0</span>건</div>
+      </div>
+    </div>
+    <div class="header-sub">건설현장 카카오톡 메시지 관리</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('input')">📥 입력</button>
+    <button class="tab" onclick="showTab('list')">📋 목록</button>
+    <button class="tab" onclick="showTab('todo')">✅ 할일</button>
+    <button class="tab" onclick="showTab('search')">🔍 검색</button>
+  </div>
+
+  <!-- 입력 탭 -->
+  <div class="tab-content active" id="tab-input">
+    <div class="input-section" id="input-main">
+      <div class="input-card">
+        <div class="input-header">
+          <div class="input-title">카카오톡 메시지 붙여넣기</div>
+          <div class="input-sub">PC 카톡에서 원하는 대화를 복사해서 붙여넣으세요</div>
+        </div>
+        <div class="input-body">
+          <div class="guide">
+            <div class="guide-title">💡 사용법</div>
+            <div class="guide-step">1. PC 카카오톡에서 원하는 대화 드래그 → Ctrl+C 복사</div>
+            <div class="guide-step">2. 채팅방 이름 입력</div>
+            <div class="guide-step">3. 아래 텍스트 영역에 Ctrl+V 붙여넣기</div>
+            <div class="guide-step">4. AI 분류 버튼 클릭</div>
+          </div>
+          <div class="room-row">
+            <span class="room-label">채팅방명</span>
+            <input class="room-input" id="room-input" type="text" placeholder="예: 전체 관리자방" />
+          </div>
+          <textarea class="paste-area" id="paste-area" placeholder="여기에 카카오톡 대화 내용을 붙여넣으세요...&#10;&#10;예시:&#10;2026년 5월 15일 오전 10:15, 현장소장 : 신호수 펌프카 게이트 배치해주세요&#10;2026년 5월 15일 오전 10:30, 김철수 : 알겠습니다"></textarea>
+          <div class="input-footer">
+            <span class="char-count" id="char-count">0자</span>
+            <button class="analyze-btn" id="analyze-btn" onclick="analyzeText()">🤖 AI 분류 시작</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 로딩 -->
+    <div id="input-loading" style="display:none">
+      <div class="loading">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loading-text">AI가 분류 중...</div>
+        <div class="loading-sub">잠시만 기다려주세요</div>
+      </div>
+    </div>
+
+    <!-- 미리보기 -->
+    <div id="input-preview" style="display:none">
+      <div class="preview-header">
+        <div>
+          <div class="preview-title" id="preview-title">분석 완료</div>
+          <div class="preview-sub" id="preview-sub"></div>
+        </div>
+      </div>
+      <div class="preview-actions">
+        <button class="btn-cancel" onclick="resetInput()">취소</button>
+        <button class="btn-save" onclick="saveAll()">전체 저장</button>
+      </div>
+      <div class="list-body" id="preview-list"></div>
+    </div>
+
+    <!-- 완료 -->
+    <div id="input-done" style="display:none">
+      <div class="done-box">
+        <div class="done-emoji">✅</div>
+        <div class="done-title">저장 완료!</div>
+        <div class="done-sub" id="done-saved"></div>
+        <div class="done-sub" id="done-skipped"></div>
+        <div class="done-sub" id="done-todos"></div>
+        <button class="done-btn" onclick="resetInput()">다시 입력하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 목록 탭 -->
+  <div class="tab-content" id="tab-list">
+    <div class="filter-bar" id="list-filter">
+      <button class="filter-chip on" onclick="filterList('전체',this)">전체</button>
+      <button class="filter-chip" onclick="filterList('지시사항',this)">📋 지시</button>
+      <button class="filter-chip" onclick="filterList('자재/발주',this)">🧱 자재</button>
+      <button class="filter-chip" onclick="filterList('안전',this)">⚠️ 안전</button>
+      <button class="filter-chip" onclick="filterList('하자/보수',this)">🔧 하자</button>
+      <button class="filter-chip" onclick="filterList('일정',this)">📅 일정</button>
+      <button class="filter-chip" onclick="filterList('시공기준',this)">📐 시공</button>
+    </div>
+    <div class="list-body" id="list-body"></div>
+  </div>
+
+  <!-- 할일 탭 -->
+  <div class="tab-content" id="tab-todo">
+    <div class="todo-body" id="todo-body"></div>
+  </div>
+
+  <!-- 검색 탭 -->
+  <div class="tab-content" id="tab-search">
+    <div class="search-top">
+      <input class="search-input" id="search-input" type="text" placeholder="키워드, 발신자 검색..." oninput="doSearch()">
+      <div class="search-filter" id="search-filter">
+        <button class="filter-chip" onclick="toggleSearchTag('지시사항',this)">📋 지시</button>
+        <button class="filter-chip" onclick="toggleSearchTag('자재/발주',this)">🧱 자재</button>
+        <button class="filter-chip" onclick="toggleSearchTag('안전',this)">⚠️ 안전</button>
+        <button class="filter-chip" onclick="toggleSearchTag('하자/보수',this)">🔧 하자</button>
+        <button class="filter-chip" onclick="toggleSearchTag('일정',this)">📅 일정</button>
+        <button class="filter-chip" onclick="toggleSearchTag('시공기준',this)">📐 시공</button>
+      </div>
+    </div>
+    <div class="result-count" id="result-count"></div>
+    <div class="search-body" id="search-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const GEMINI_API_KEY = 'AIzaSyCjb8TEdbN4uzwbpnrzXfO2IefFaAWqbss';
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+
+const TAG_COLORS = {
+  '지시사항': { bg: '#E6F1FB', text: '#0C447C' },
+  '자재/발주': { bg: '#EAF3DE', text: '#27500A' },
+  '안전': { bg: '#FAECE7', text: '#7A2B0C' },
+  '하자/보수': { bg: '#FAEEDA', text: '#6B3A02' },
+  '일정': { bg: '#EEEDFE', text: '#26215C' },
+  '시공기준': { bg: '#FDE8F5', text: '#6B0F4A' },
+  '기타': { bg: '#F1EFE8', text: '#444441' },
+};
+const TAG_EMOJI = {
+  '지시사항':'📋','자재/발주':'🧱','안전':'⚠️',
+  '하자/보수':'🔧','일정':'📅','시공기준':'📐','기타':'📌'
+};
+
+// 상태
+let messages = JSON.parse(localStorage.getItem('hj_messages') || '[]');
+let todos = JSON.parse(localStorage.getItem('hj_todos') || '[]');
+let processedIds = JSON.parse(localStorage.getItem('hj_ids') || '[]');
+let previewData = [];
+let currentListFilter = '전체';
+let searchTags = [];
+let collapsedRooms = {};
+
+// 저장
+function save() {
+  localStorage.setItem('hj_messages', JSON.stringify(messages));
+  localStorage.setItem('hj_todos', JSON.stringify(todos));
+  localStorage.setItem('hj_ids', JSON.stringify(processedIds));
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('total-count').textContent = messages.length;
+  document.getElementById('todo-count').textContent = todos.filter(t => !t.done).length;
+}
+
+// 탭
+function showTab(name) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  event.target.classList.add('active');
+  if (name === 'list') renderList();
+  if (name === 'todo') renderTodo();
+  if (name === 'search') doSearch();
+}
+
+// 텍스트 카운트
+document.getElementById('paste-area').addEventListener('input', function() {
+  document.getElementById('char-count').textContent = this.value.length + '자';
+});
+
+// 카톡 텍스트 파싱
+function parseKakaoText(text) {
+  const messages = [];
+  const lines = text.split('\n');
+  const pcRegex = /^\[(.+?)\] \[(오전|오후) (\d{1,2}:\d{2})\] (.+)/;
+  const mobileRegex = /^(\d{4}년 \d{1,2}월 \d{1,2}일 (?:오전|오후) \d{1,2}:\d{2}), (.+?) : (.+)/;
+  const dateLine = /^-*\s*(\d{4})년 (\d{1,2})월 (\d{1,2})일/;
+
+  let currentDate = new Date();
+  let current = null;
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+
+    const dlMatch = trimmed.match(dateLine);
+    if (dlMatch && !pcRegex.test(trimmed) && !mobileRegex.test(trimmed)) {
+      currentDate = new Date(dlMatch[1], parseInt(dlMatch[2])-1, parseInt(dlMatch[3]));
+      continue;
+    }
+
+    const pcMatch = trimmed.match(pcRegex);
+    if (pcMatch) {
+      if (current) messages.push(current);
+      const [, sender, ampm, timeStr, content] = pcMatch;
+      const [h, m] = timeStr.split(':').map(Number);
+      let hour = h;
+      if (ampm === '오후' && hour !== 12) hour += 12;
+      if (ampm === '오전' && hour === 12) hour = 0;
+      const ts = new Date(currentDate);
+      ts.setHours(hour, m, 0, 0);
+      const dateStr = currentDate.getFullYear() + '년 ' + (currentDate.getMonth()+1) + '월 ' + currentDate.getDate() + '일 ' + ampm + ' ' + timeStr;
+      current = { id: generateId(dateStr, sender, content), dateStr, sender, content, timestamp: ts.getTime() };
+      continue;
+    }
+
+    const mobileMatch = trimmed.match(mobileRegex);
+    if (mobileMatch) {
+      if (current) messages.push(current);
+      const [, dateStr, sender, content] = mobileMatch;
+      current = { id: generateId(dateStr, sender, content), dateStr, sender, content, timestamp: parseDate(dateStr).getTime() };
+      continue;
+    }
+
+    if (current) current.content += '\n' + trimmed;
+  }
+  if (current) messages.push(current);
+  return messages;
+}
+
+function generateId(dateStr, sender, content) {
+  const str = `${dateStr}_${sender}_${content.slice(0, 20)}`;
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+
+function parseDate(dateStr) {
+  try {
+    const m = dateStr.match(/(\d{4})년 (\d{1,2})월 (\d{1,2})일 (오전|오후) (\d{1,2}):(\d{2})/);
+    if (!m) return new Date();
+    let [, y, mo, d, ampm, h, min] = m;
+    h = parseInt(h);
+    if (ampm === '오후' && h !== 12) h += 12;
+    if (ampm === '오전' && h === 12) h = 0;
+    return new Date(y, mo - 1, d, h, parseInt(min));
+  } catch { return new Date(); }
+}
+
+// AI 분류
+async function analyzeText() {
+  const text = document.getElementById('paste-area').value.trim();
+  const roomName = document.getElementById('room-input').value.trim() || '미분류';
+  if (!text) { showToast('텍스트를 붙여넣어 주세요'); return; }
+
+  const parsed = parseKakaoText(text);
+  if (parsed.length === 0) { showToast('카카오톡 대화 형식을 찾을 수 없어요'); return; }
+
+  showInputView('loading');
+  document.getElementById('loading-text').textContent = `${parsed.length}개 메시지 AI 분류 중...`;
+
+  try {
+    const classified = await classifyWithGemini(parsed, roomName);
+    previewData = classified;
+    showInputView('preview');
+    document.getElementById('preview-title').textContent = `총 ${classified.length}건 중요 메시지 추출`;
+    document.getElementById('preview-sub').textContent = `전체 ${parsed.length}건 중 · 할일 ${classified.filter(m=>m.isTodo).length}건 감지`;
+    renderPreview(classified);
+  } catch (e) {
+    console.error(e);
+    showInputView('main');
+    showToast('AI 분류 중 오류가 발생했어요');
+  }
+}
+
+async function classifyWithGemini(messages, roomName) {
+  const CHUNK = 30;
+  const results = [];
+  for (let i = 0; i < messages.length; i += CHUNK) {
+    const chunk = messages.slice(i, i + CHUNK);
+    const classified = await classifyChunk(chunk, roomName);
+    results.push(...classified);
+  }
+  return results;
+}
+
+async function classifyChunk(msgs, roomName) {
+  const list = msgs.map((m, i) => `[${i}] ${m.sender}: ${m.content}`).join('\n');
+  const prompt = `당신은 건설현장 카카오톡 메시지를 분석하는 AI입니다.
+아래 메시지들 중 건설현장 관리에 중요한 메시지만 골라서 JSON으로 응답하세요.
+
+포함할 메시지:
+- 지시사항: 작업 지시, 조치 요청, 확인 요청
+- 자재/발주: 자재 주문, 수량, 납기
+- 안전: 안전 주의사항, 사고 예방
+- 하자/보수: 하자 발생, 보수 요청
+- 일정: 공사 일정, 방문 일정
+- 시공기준: 시공 방법, 기준, 규격
+
+제외할 메시지:
+- 단순 답변(네, ㅇㅋ, 알겠습니다, 확인, 감사합니다)
+- 인사말, 안부
+- 이모티콘만 있는 것
+- 의미없는 짧은 대화
+
+메시지:
+${list}
+
+중요한 것만 골라서 JSON 배열만 응답(다른 텍스트 없이):
+[{"index":0,"tag":"지시사항","summary":"펌프카 배치 지시","isTodo":true}]`;
+
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1 },
+    }),
+  });
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+  const clean = text.replace(/```json|```/g, '').trim();
+  const classified = JSON.parse(clean);
+
+  return classified.map(r => ({
+    ...msgs[r.index],
+    roomName,
+    tag: r.tag || '기타',
+    summary: r.summary || msgs[r.index]?.content?.slice(0, 20),
+    isTodo: r.isTodo || false,
+  })).filter(m => m && m.id);
+}
+
+// 저장
+function saveAll() {
+  let saved = 0, skipped = 0, todoCount = 0;
+  for (const msg of previewData) {
+    if (processedIds.includes(msg.id)) { skipped++; continue; }
+    messages.unshift(msg);
+    processedIds.push(msg.id);
+    saved++;
+    if (msg.isTodo) {
+      todos.unshift({ id: `todo_${msg.id}`, text: msg.summary, tag: msg.tag, roomName: msg.roomName, done: false });
+      todoCount++;
+    }
+  }
+  save();
+  document.getElementById('done-saved').textContent = `새 메시지 ${saved}건 저장`;
+  document.getElementById('done-skipped').textContent = `중복 스킵 ${skipped}건`;
+  document.getElementById('done-todos').textContent = `할일 자동 등록 ${todoCount}건`;
+  showInputView('done');
+}
+
+function resetInput() {
+  document.getElementById('paste-area').value = '';
+  document.getElementById('room-input').value = '';
+  document.getElementById('char-count').textContent = '0자';
+  previewData = [];
+  showInputView('main');
+}
+
+function showInputView(view) {
+  document.getElementById('input-main').style.display = view === 'main' ? 'block' : 'none';
+  document.getElementById('input-loading').style.display = view === 'loading' ? 'block' : 'none';
+  document.getElementById('input-preview').style.display = view === 'preview' ? 'block' : 'none';
+  document.getElementById('input-done').style.display = view === 'done' ? 'block' : 'none';
+}
+
+// 렌더링
+function renderMsgCard(msg, actions = true) {
+  const tc = TAG_COLORS[msg.tag] || TAG_COLORS['기타'];
+  const em = TAG_EMOJI[msg.tag] || '📌';
+  const timeStr = msg.dateStr ? msg.dateStr.split(' ').slice(-2).join(' ') : '';
+  return `
+    <div class="msg-card">
+      <div class="msg-card-top">
+        <span class="tag-badge" style="background:${tc.bg};color:${tc.text}">${em} ${msg.tag}</span>
+        ${msg.isTodo ? '<span class="tag-badge" style="background:#E6F1FB;color:#0C447C">✓ 할일</span>' : ''}
+      </div>
+      ${msg.summary ? `<div class="msg-summary">${msg.summary}</div>` : ''}
+      <div class="msg-content">${msg.content}</div>
+      <div class="msg-footer">
+        <span class="msg-sender">${msg.sender || ''}</span>
+        <span class="msg-time">${timeStr}</span>
+      </div>
+      ${actions ? `
+      <div class="msg-actions">
+        <button class="msg-btn" onclick="addTodo('${msg.id}')">✓ 할일로</button>
+        <button class="msg-btn" onclick="copyMsg('${msg.id}')">복사</button>
+        <button class="msg-btn del" onclick="deleteMsg('${msg.id}')">삭제</button>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderPreview(msgs) {
+  document.getElementById('preview-list').innerHTML = msgs.map(m => renderMsgCard(m, false)).join('');
+}
+
+function renderList() {
+  const filtered = currentListFilter === '전체' ? messages : messages.filter(m => m.tag === currentListFilter);
+  const roomMap = {};
+  for (const msg of filtered) {
+    const r = msg.roomName || '기타';
+    if (!roomMap[r]) roomMap[r] = [];
+    roomMap[r].push(msg);
+  }
+
+  if (Object.keys(roomMap).length === 0) {
+    document.getElementById('list-body').innerHTML = `<div class="empty"><div class="empty-text">저장된 메시지가 없어요</div><div class="empty-sub">카카오톡 메시지를 입력 탭에서 붙여넣어 보세요</div></div>`;
+    return;
+  }
+
+  let html = '';
+  for (const [roomName, msgs] of Object.entries(roomMap)) {
+    const sorted = [...msgs].sort((a, b) => a.timestamp - b.timestamp);
+    const dateGroups = {};
+    for (const msg of sorted) {
+      const label = formatDate(msg.timestamp);
+      if (!dateGroups[label]) dateGroups[label] = [];
+      dateGroups[label].push(msg);
+    }
+    const isCollapsed = collapsedRooms[roomName];
+    html += `
+      <div class="room-group">
+        <div class="room-hdr" onclick="toggleRoom('${roomName}')">
+          <div class="room-hdr-left">
+            <div class="room-dot"></div>
+            <span class="room-name">${roomName}</span>
+            <span class="room-cnt">${msgs.length}건</span>
+          </div>
+          <span class="room-chevron ${isCollapsed ? 'closed' : ''}">▼</span>
+        </div>
+        <div class="room-msgs" id="room-${roomName}" style="display:${isCollapsed ? 'none' : 'block'}">
+          ${Object.entries(dateGroups).map(([label, ms]) => `
+            <div class="date-label">${label}</div>
+            ${ms.map(m => renderMsgCard(m)).join('')}
+          `).join('')}
+        </div>
+      </div>`;
+  }
+  document.getElementById('list-body').innerHTML = html;
+}
+
+function toggleRoom(name) {
+  collapsedRooms[name] = !collapsedRooms[name];
+  renderList();
+}
+
+function filterList(tag, el) {
+  currentListFilter = tag;
+  document.querySelectorAll('#list-filter .filter-chip').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+  renderList();
+}
+
+function renderTodo() {
+  const pending = todos.filter(t => !t.done);
+  const done = todos.filter(t => t.done);
+  let html = '';
+  if (pending.length > 0) {
+    html += `<div class="section-title">미완료 · ${pending.length}건</div>`;
+    html += pending.map(t => todoCard(t)).join('');
+  }
+  if (done.length > 0) {
+    html += `<div class="section-title" style="margin-top:16px">완료 · ${done.length}건</div>`;
+    html += done.map(t => todoCard(t)).join('');
+  }
+  if (todos.length === 0) {
+    html = `<div class="empty"><div class="empty-text">할일이 없어요</div><div class="empty-sub">메시지를 저장하면 할일이 자동 등록돼요</div></div>`;
+  }
+  document.getElementById('todo-body').innerHTML = html;
+  updateStats();
+}
+
+function todoCard(t) {
+  const em = TAG_EMOJI[t.tag] || '📌';
+  return `
+    <div class="todo-card ${t.done ? 'done' : ''}" onclick="toggleTodo('${t.id}')">
+      <div class="todo-check ${t.done ? 'done' : ''}">${t.done ? '✓' : ''}</div>
+      <div>
+        <div class="todo-text ${t.done ? 'done' : ''}">${t.text}</div>
+        <div class="todo-meta">${em} ${t.tag} · ${t.roomName || ''}</div>
+      </div>
+    </div>`;
+}
+
+function toggleTodo(id) {
+  todos = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
+  save();
+  renderTodo();
+}
+
+function doSearch() {
+  const q = document.getElementById('search-input').value.trim();
+  let results = messages.filter(m => {
+    const matchQ = !q || m.content.includes(q) || m.summary?.includes(q) || m.sender?.includes(q);
+    const matchTag = searchTags.length === 0 || searchTags.includes(m.tag);
+    return matchQ && matchTag;
+  });
+  document.getElementById('result-count').textContent = `${results.length}건`;
+  document.getElementById('search-body').innerHTML = results.length ? results.map(m => renderMsgCard(m)).join('') : `<div class="empty"><div class="empty-text">검색 결과가 없어요</div></div>`;
+}
+
+function toggleSearchTag(tag, el) {
+  if (searchTags.includes(tag)) {
+    searchTags = searchTags.filter(t => t !== tag);
+    el.classList.remove('on');
+  } else {
+    searchTags.push(tag);
+    el.classList.add('on');
+  }
+  doSearch();
+}
+
+// 액션
+function addTodo(id) {
+  const msg = messages.find(m => m.id === id);
+  if (!msg) return;
+  if (todos.find(t => t.id === `todo_${id}`)) { showToast('이미 할일로 등록됐어요'); return; }
+  todos.unshift({ id: `todo_${id}`, text: msg.summary || msg.content.slice(0, 30), tag: msg.tag, roomName: msg.roomName, done: false });
+  save();
+  showToast('할일로 등록했어요!');
+}
+
+function copyMsg(id) {
+  const msg = messages.find(m => m.id === id);
+  if (!msg) return;
+  navigator.clipboard.writeText(msg.content).then(() => showToast('복사했어요!'));
+}
+
+function deleteMsg(id) {
+  if (!confirm('이 메시지를 삭제할까요?')) return;
+  messages = messages.filter(m => m.id !== id);
+  save();
+  renderList();
+  showToast('삭제했어요');
+}
+
+function formatDate(ts) {
+  const d = new Date(ts);
+  const today = new Date();
+  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+  const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (same(d, today)) return '오늘';
+  if (same(d, yesterday)) return '어제';
+  const days = ['일','월','화','수','목','금','토'];
+  return `${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// 초기화
+updateStats();
+</script>
+</body>
+</html>
