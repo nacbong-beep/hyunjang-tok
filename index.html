@@ -301,7 +301,7 @@
 
 <script>
 let GEMINI_API_KEY = localStorage.getItem('hj_api_key') || '';
-const getGeminiUrl = () => `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const getGeminiUrl = () => `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
 
 const TAG_COLORS = {
   '지시사항': { bg: '#E6F1FB', text: '#0C447C' },
