@@ -4,652 +4,653 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>현장톡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap');
+:root {
+  --bg: #f0ede8;
+  --surface: #faf9f7;
+  --surface2: #ffffff;
+  --primary: #1c2b3a;
+  --primary2: #2d4357;
+  --accent: #c17f3e;
+  --border: #e2ddd8;
+  --border2: #d4cfc9;
+  --text: #1c2b3a;
+  --text2: #6b7280;
+  --text3: #9ca3af;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow2: 0 4px 12px rgba(0,0,0,0.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
-  :root {
-    --bg: #f4f3ef;
-    --surface: #ffffff;
-    --primary: #1a1a2e;
-    --primary-light: #2d2d4e;
-    --border: #e8e6e0;
-    --text: #1a1a2e;
-    --text-sub: #888;
-    --text-dim: #bbb;
-    --tag-지시: #E6F1FB; --tag-지시-t: #0C447C;
-    --tag-자재: #EAF3DE; --tag-자재-t: #27500A;
-    --tag-안전: #FAECE7; --tag-안전-t: #7A2B0C;
-    --tag-하자: #FAEEDA; --tag-하자-t: #6B3A02;
-    --tag-일정: #EEEDFE; --tag-일정-t: #26215C;
-    --tag-시공: #FDE8F5; --tag-시공-t: #6B0F4A;
-    --tag-기타: #F1EFE8; --tag-기타-t: #444441;
-  }
+/* 레이아웃 */
+.layout{display:flex;height:100vh;overflow:hidden;}
+.sidebar{width:240px;background:var(--primary);display:flex;flex-direction:column;flex-shrink:0;}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Noto Sans KR', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+/* 사이드바 */
+.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,0.1);}
+.logo-title{color:#fff;font-size:18px;font-weight:700;letter-spacing:-0.5px;}
+.logo-sub{color:rgba(255,255,255,0.4);font-size:11px;margin-top:2px;}
+.sidebar-nav{padding:12px 8px;flex:1;overflow-y:auto;}
+.nav-label{color:rgba(255,255,255,0.4);font-size:10px;font-weight:600;letter-spacing:1px;padding:8px 8px 4px;}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,0.7);font-size:13px;transition:all 0.15s;margin-bottom:2px;}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:#fff;}
+.nav-item.active{background:rgba(255,255,255,0.15);color:#fff;}
+.nav-item .icon{font-size:15px;width:18px;text-align:center;}
+.nav-item .cnt{margin-left:auto;background:rgba(255,255,255,0.15);border-radius:10px;padding:1px 7px;font-size:10px;}
+.room-add-btn{margin:0 8px 12px;padding:8px;border:1px dashed rgba(255,255,255,0.2);border-radius:8px;background:none;color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;font-family:inherit;width:calc(100% - 16px);transition:all 0.15s;}
+.room-add-btn:hover{border-color:rgba(255,255,255,0.4);color:rgba(255,255,255,0.8);}
+.sidebar-stats{padding:12px 16px;border-top:1px solid rgba(255,255,255,0.1);}
+.stat-row{display:flex;justify-content:space-between;margin-bottom:4px;}
+.stat-label{color:rgba(255,255,255,0.4);font-size:11px;}
+.stat-val{color:#fff;font-size:11px;font-weight:600;}
 
-  /* 레이아웃 */
-  .app { display: flex; flex-direction: column; min-height: 100vh; max-width: 960px; margin: 0 auto; }
+/* 헤더 */
+.header{background:var(--surface2);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.header-title{font-size:16px;font-weight:600;color:var(--text);}
+.header-actions{display:flex;gap:8px;}
+.btn{padding:7px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:inherit;transition:all 0.15s;border:none;}
+.btn-primary{background:var(--primary);color:#fff;font-weight:500;}
+.btn-primary:hover{background:var(--primary2);}
+.btn-outline{background:none;border:1px solid var(--border2);color:var(--text2);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
 
-  /* 헤더 */
-  .header { background: var(--primary); padding: 16px 20px; position: sticky; top: 0; z-index: 100; }
-  .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
-  .logo { color: #fff; font-size: 18px; font-weight: 700; letter-spacing: -0.5px; }
-  .header-sub { color: rgba(255,255,255,0.5); font-size: 12px; }
-  .header-stats { display: flex; gap: 12px; }
-  .stat { color: rgba(255,255,255,0.7); font-size: 12px; }
-  .stat span { color: #fff; font-weight: 600; }
+/* 탭 */
+.tabs{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;}
+.tab{padding:10px 16px;font-size:13px;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;background:none;border-top:none;border-left:none;border-right:none;font-weight:500;transition:all 0.15s;}
+.tab.active{color:var(--primary);border-bottom-color:var(--accent);}
 
-  /* 탭 */
-  .tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .tab { flex: 1; padding: 12px 8px; text-align: center; font-size: 13px; color: var(--text-sub); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.15s; font-family: inherit; font-weight: 500; background: none; border-top: none; border-left: none; border-right: none; }
-  .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+/* 컨텐츠 */
+.content{flex:1;overflow-y:auto;padding:20px;}
 
-  /* 탭 컨텐츠 */
-  .tab-content { display: none; flex: 1; }
-  .tab-content.active { display: block; }
+/* 필터바 */
+.filter-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;align-items:center;}
+.filter-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border2);background:var(--surface2);font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.filter-chip:hover{border-color:var(--primary);}
+.filter-chip.on{background:var(--primary);color:#fff;border-color:var(--primary);}
 
-  /* 입력 화면 */
-  .input-section { padding: 16px; }
-  .input-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; }
-  .input-header { background: var(--primary); padding: 12px 16px; }
-  .input-title { color: #fff; font-size: 14px; font-weight: 600; }
-  .input-sub { color: rgba(255,255,255,0.6); font-size: 12px; margin-top: 2px; }
-  .input-body { padding: 16px; }
-  .room-row { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; }
-  .room-label { font-size: 13px; color: var(--text-sub); white-space: nowrap; }
-  .room-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--bg); }
-  .paste-area { width: 100%; min-height: 120px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--bg); resize: vertical; line-height: 1.6; }
-  .paste-area::placeholder { color: var(--text-dim); }
-  .input-footer { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
-  .char-count { font-size: 12px; color: var(--text-dim); flex: 1; }
-  .analyze-btn { padding: 10px 20px; background: var(--primary); color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; font-family: inherit; transition: opacity 0.15s; }
-  .analyze-btn:hover { opacity: 0.85; }
-  .analyze-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* 메시지 카드 */
+.msg-card{background:var(--surface2);border-radius:10px;border:1px solid var(--border);padding:14px;margin-bottom:8px;box-shadow:var(--shadow);transition:all 0.15s;}
+.msg-card:hover{box-shadow:var(--shadow2);transform:translateY(-1px);}
+.msg-card-top{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.tag-badge{border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;}
+.todo-badge{background:#EFF6FF;color:#1D4ED8;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;}
+.msg-summary{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.4;}
+.msg-content{font-size:12px;color:var(--text2);line-height:1.6;margin-bottom:8px;}
+.msg-footer{display:flex;justify-content:space-between;align-items:center;}
+.msg-meta{font-size:11px;color:var(--text3);}
+.msg-actions{display:flex;gap:6px;}
+.msg-btn{padding:4px 10px;border:1px solid var(--border2);border-radius:6px;background:none;font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all 0.15s;}
+.msg-btn:hover{background:var(--bg);}
+.msg-btn.del{color:#DC2626;border-color:#FECACA;}
 
-  /* 가이드 */
-  .guide { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
-  .guide-title { font-size: 12px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; }
-  .guide-step { font-size: 12px; color: var(--text-sub); line-height: 1.8; }
+/* 채팅방 그룹 */
+.room-group{margin-bottom:8px;}
+.room-hdr{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;user-select:none;}
+.room-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.room-name-txt{font-size:13px;font-weight:600;color:var(--text);}
+.room-cnt-badge{font-size:11px;color:var(--text3);background:var(--border);border-radius:10px;padding:1px 8px;}
+.chevron{font-size:11px;color:var(--text3);margin-left:auto;transition:transform 0.2s;}
+.chevron.closed{transform:rotate(-90deg);}
+.date-label{font-size:11px;color:var(--text3);font-weight:500;padding:8px 2px 4px;letter-spacing:0.3px;}
 
-  /* 로딩 */
-  .loading { text-align: center; padding: 40px 20px; }
-  .spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text { font-size: 14px; color: var(--text-sub); }
-  .loading-sub { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+/* 캘린더 */
+.calendar-wrap{background:var(--surface2);border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);}
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.cal-title{font-size:16px;font-weight:600;}
+.cal-nav{display:flex;gap:8px;}
+.cal-nav-btn{width:32px;height:32px;border:1px solid var(--border2);border-radius:8px;background:none;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all 0.15s;}
+.cal-nav-btn:hover{background:var(--bg);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);}
+.cal-day-label{padding:10px;text-align:center;font-size:11px;font-weight:600;color:var(--text3);border-bottom:1px solid var(--border);}
+.cal-cell{min-height:80px;padding:6px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s;}
+.cal-cell:hover{background:var(--bg);}
+.cal-cell.today .cal-date{background:var(--primary);color:#fff;border-radius:50%;width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+.cal-cell.other-month .cal-date{color:var(--text3);}
+.cal-date{font-size:12px;font-weight:500;margin-bottom:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;}
+.cal-event{font-size:10px;padding:2px 5px;border-radius:4px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;}
+.cal-event:hover{opacity:0.8;}
 
-  /* 미리보기 */
-  .preview-header { background: var(--primary); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
-  .preview-title { color: #fff; font-size: 14px; font-weight: 600; }
-  .preview-sub { color: rgba(255,255,255,0.6); font-size: 12px; }
-  .preview-actions { display: flex; gap: 8px; padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .btn-cancel { flex: 1; padding: 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); font-size: 13px; color: var(--text-sub); cursor: pointer; font-family: inherit; }
-  .btn-save { flex: 2; padding: 9px; border: none; border-radius: 8px; background: var(--primary); font-size: 13px; color: #fff; font-weight: 600; cursor: pointer; font-family: inherit; }
+/* 할일 */
+.todo-card{background:var(--surface2);border-radius:10px;border:1px solid var(--border);padding:12px 14px;margin-bottom:6px;display:flex;gap:12px;align-items:flex-start;box-shadow:var(--shadow);cursor:pointer;transition:all 0.15s;}
+.todo-card:hover{box-shadow:var(--shadow2);}
+.todo-card.done{opacity:0.5;}
+.todo-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border2);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all 0.15s;}
+.todo-check.done{background:var(--primary);border-color:var(--primary);color:#fff;}
+.todo-text{font-size:13px;color:var(--text);line-height:1.5;}
+.todo-text.done{text-decoration:line-through;color:var(--text3);}
+.todo-meta{font-size:11px;color:var(--text3);margin-top:3px;}
+.section-hdr{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:0.5px;text-transform:uppercase;}
 
-  /* 필터 */
-  .filter-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 8px 16px; display: flex; gap: 6px; overflow-x: auto; }
-  .filter-bar::-webkit-scrollbar { display: none; }
-  .filter-chip { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; color: var(--text-sub); cursor: pointer; white-space: nowrap; font-family: inherit; transition: all 0.15s; }
-  .filter-chip.on { background: var(--primary); color: #fff; border-color: var(--primary); }
+/* 검색 */
+.search-wrap{position:relative;margin-bottom:16px;}
+.search-input{width:100%;padding:10px 14px 10px 36px;border:1px solid var(--border2);border-radius:10px;font-size:14px;font-family:inherit;background:var(--surface2);color:var(--text);box-shadow:var(--shadow);}
+.search-input:focus{outline:none;border-color:var(--primary);}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;}
 
-  /* 메시지 목록 */
-  .list-body { padding: 12px 16px 80px; }
-  .room-group { margin-bottom: 4px; }
-  .room-hdr { display: flex; align-items: center; justify-content: space-between; padding: 10px 0 6px; cursor: pointer; user-select: none; }
-  .room-hdr-left { display: flex; align-items: center; gap: 8px; }
-  .room-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--primary); }
-  .room-name { font-size: 13px; font-weight: 600; color: var(--primary); }
-  .room-cnt { font-size: 11px; color: var(--text-sub); background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1px 8px; }
-  .room-chevron { font-size: 11px; color: var(--text-dim); transition: transform 0.2s; }
-  .room-chevron.closed { transform: rotate(-90deg); }
-  .room-msgs { }
-  .date-label { font-size: 11px; color: var(--text-dim); font-weight: 500; padding: 6px 2px 4px; letter-spacing: 0.3px; }
-  .msg-card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); padding: 12px; margin-bottom: 6px; }
-  .msg-card-top { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-  .tag-badge { border-radius: 10px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
-  .msg-summary { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
-  .msg-content { font-size: 12px; color: var(--text-sub); line-height: 1.5; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .msg-footer { display: flex; justify-content: space-between; margin-bottom: 8px; }
-  .msg-sender { font-size: 11px; color: var(--text-dim); }
-  .msg-time { font-size: 11px; color: var(--text-dim); }
-  .msg-actions { display: flex; gap: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
-  .msg-btn { flex: 1; padding: 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); font-size: 11px; color: var(--text-sub); cursor: pointer; font-family: inherit; transition: all 0.15s; }
-  .msg-btn:hover { background: var(--border); }
-  .msg-btn.del { color: #c0392b; border-color: #f5c6c6; }
+/* 입력 패널 */
+.input-panel{background:var(--surface2);border-radius:12px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow);}
+.input-panel-hdr{background:var(--primary);padding:14px 18px;}
+.input-panel-title{color:#fff;font-size:14px;font-weight:600;}
+.input-panel-sub{color:rgba(255,255,255,0.55);font-size:12px;margin-top:2px;}
+.input-panel-body{padding:16px;}
+.room-select-row{display:flex;gap:8px;margin-bottom:12px;align-items:center;}
+.room-select-label{font-size:13px;color:var(--text2);white-space:nowrap;font-weight:500;}
+.room-select{flex:1;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface2);color:var(--text);}
+.paste-guide{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:12px;font-size:12px;color:var(--text2);line-height:1.8;}
+.paste-area{width:100%;min-height:160px;padding:12px;border:1px solid var(--border2);border-radius:8px;font-size:13px;font-family:inherit;color:var(--text);background:var(--bg);resize:vertical;line-height:1.6;}
+.paste-area:focus{outline:none;border-color:var(--primary);}
+.input-footer{display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
+.char-cnt{font-size:12px;color:var(--text3);}
 
-  /* 할일 */
-  .todo-body { padding: 12px 16px 80px; }
-  .section-title { font-size: 11px; font-weight: 600; color: var(--text-sub); margin-bottom: 8px; letter-spacing: 0.3px; }
-  .todo-card { background: var(--surface); border-radius: 10px; border: 1px solid var(--border); padding: 12px; margin-bottom: 6px; display: flex; gap: 10px; align-items: flex-start; cursor: pointer; transition: opacity 0.15s; }
-  .todo-card.done { opacity: 0.5; }
-  .todo-check { width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
-  .todo-check.done { background: var(--primary); border-color: var(--primary); color: #fff; font-size: 11px; }
-  .todo-text { font-size: 13px; color: var(--text); line-height: 1.5; }
-  .todo-text.done { text-decoration: line-through; color: var(--text-dim); }
-  .todo-meta { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+/* 모달 */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);}
+.modal{background:var(--surface2);border-radius:16px;padding:24px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;}
+.modal-input{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:12px;}
+.modal-input:focus{outline:none;border-color:var(--primary);}
+.modal-actions{display:flex;gap:8px;margin-top:4px;}
 
-  /* 검색 */
-  .search-top { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; }
-  .search-input { width: 100%; padding: 9px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; font-family: inherit; background: var(--bg); color: var(--text); }
-  .search-input:focus { outline: none; border-color: var(--primary); }
-  .search-filter { display: flex; gap: 6px; overflow-x: auto; margin-top: 8px; }
-  .search-filter::-webkit-scrollbar { display: none; }
-  .result-count { font-size: 11px; color: var(--text-dim); padding: 8px 16px 4px; }
-  .search-body { padding: 0 16px 80px; }
+/* 빈 화면 */
+.empty{text-align:center;padding:60px 20px;}
+.empty-icon{font-size:40px;margin-bottom:12px;}
+.empty-text{font-size:15px;color:var(--text2);margin-bottom:6px;}
+.empty-sub{font-size:13px;color:var(--text3);}
 
-  /* 완료 화면 */
-  .done-box { text-align: center; padding: 60px 20px; }
-  .done-emoji { font-size: 48px; margin-bottom: 12px; }
-  .done-title { font-size: 20px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
-  .done-sub { font-size: 14px; color: var(--text-sub); margin-bottom: 4px; }
-  .done-btn { margin-top: 24px; padding: 10px 24px; border: 1px solid var(--primary); border-radius: 10px; background: none; color: var(--primary); font-size: 14px; font-family: inherit; cursor: pointer; }
+/* 토스트 */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;transition:opacity 0.3s;pointer-events:none;z-index:9999;white-space:nowrap;}
+.toast.show{opacity:1;}
 
-  /* 빈 화면 */
-  .empty { text-align: center; padding: 60px 20px; }
-  .empty-text { font-size: 15px; color: var(--text-sub); margin-bottom: 6px; }
-  .empty-sub { font-size: 13px; color: var(--text-dim); }
+/* 태그 색상 */
+.tag-지시사항{background:#EFF6FF;color:#1E40AF;}
+.tag-자재발주{background:#F0FDF4;color:#166534;}
+.tag-안전{background:#FFF7ED;color:#9A3412;}
+.tag-하자보수{background:#FFFBEB;color:#92400E;}
+.tag-일정{background:#F5F3FF;color:#5B21B6;}
+.tag-시공기준{background:#FDF2F8;color:#701A75;}
+.tag-기타{background:#F9FAFB;color:#374151;}
 
-  /* 알림 토스트 */
-  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: #fff; padding: 10px 20px; border-radius: 20px; font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
-  .toast.show { opacity: 1; }
+/* 캘린더 이벤트 색상 */
+.ev-일정{background:#EDE9FE;color:#5B21B6;}
+.ev-지시사항{background:#DBEAFE;color:#1E40AF;}
+.ev-자재발주{background:#DCFCE7;color:#166534;}
+.ev-안전{background:#FFEDD5;color:#9A3412;}
+.ev-하자보수{background:#FEF3C7;color:#92400E;}
+.ev-시공기준{background:#FCE7F3;color:#701A75;}
+.ev-기타{background:#F3F4F6;color:#374151;}
+
+@media(max-width:768px){
+  .sidebar{width:200px;}
+  .content{padding:12px;}
+}
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="header">
-    <div class="header-top">
-      <div style="display:flex;align-items:center;gap:12px;">
-      <div class="logo">현장톡</div>
-      <button onclick="showApiKeyModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:11px;padding:3px 8px;border-radius:10px;cursor:pointer;font-family:inherit;">⚙️ API키</button>
+<div class="layout">
+  <!-- 사이드바 -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-title">현장톡</div>
+      <div class="logo-sub">건설현장 메시지 관리</div>
     </div>
-      <div class="header-stats">
-        <div class="stat">저장 <span id="total-count">0</span>건</div>
-        <div class="stat">할일 <span id="todo-count">0</span>건</div>
+    <div class="sidebar-nav">
+      <div class="nav-label">메뉴</div>
+      <div class="nav-item active" onclick="showView('dashboard',this)">
+        <span class="icon">📊</span> 대시보드
       </div>
+      <div class="nav-item" onclick="showView('calendar',this)">
+        <span class="icon">📅</span> 캘린더
+      </div>
+      <div class="nav-item" onclick="showView('todo',this)">
+        <span class="icon">✅</span> 할일
+        <span class="cnt" id="nav-todo-cnt">0</span>
+      </div>
+      <div class="nav-item" onclick="showView('search',this)">
+        <span class="icon">🔍</span> 검색
+      </div>
+      <div class="nav-label" style="margin-top:8px">채팅방</div>
+      <div id="room-nav-list"></div>
     </div>
-    <div class="header-sub">건설현장 카카오톡 메시지 관리</div>
-  </div>
-
-  <div class="tabs">
-    <button class="tab active" onclick="showTab('input')">📥 입력</button>
-    <button class="tab" onclick="showTab('list')">📋 목록</button>
-    <button class="tab" onclick="showTab('todo')">✅ 할일</button>
-    <button class="tab" onclick="showTab('search')">🔍 검색</button>
-  </div>
-
-  <!-- 입력 탭 -->
-  <div class="tab-content active" id="tab-input">
-    <div class="input-section" id="input-main">
-      <div class="input-card">
-        <div class="input-header">
-          <div class="input-title">카카오톡 메시지 붙여넣기</div>
-          <div class="input-sub">PC 카톡에서 원하는 대화를 복사해서 붙여넣으세요</div>
-        </div>
-        <div class="input-body">
-          <div class="guide">
-            <div class="guide-title">💡 사용법</div>
-            <div class="guide-step">1. PC 카카오톡에서 원하는 대화 드래그 → Ctrl+C 복사</div>
-            <div class="guide-step">2. 채팅방 이름 입력</div>
-            <div class="guide-step">3. 아래 텍스트 영역에 Ctrl+V 붙여넣기</div>
-            <div class="guide-step">4. AI 분류 버튼 클릭</div>
-          </div>
-          <div class="room-row">
-            <span class="room-label">채팅방명</span>
-            <input class="room-input" id="room-input" type="text" placeholder="예: 전체 관리자방" />
-          </div>
-          <textarea class="paste-area" id="paste-area" placeholder="여기에 카카오톡 대화 내용을 붙여넣으세요...&#10;&#10;예시:&#10;2026년 5월 15일 오전 10:15, 현장소장 : 신호수 펌프카 게이트 배치해주세요&#10;2026년 5월 15일 오전 10:30, 김철수 : 알겠습니다"></textarea>
-          <div class="input-footer">
-            <span class="char-count" id="char-count">0자</span>
-            <button class="analyze-btn" id="analyze-btn" onclick="analyzeText()">🤖 AI 분류 시작</button>
-          </div>
-        </div>
+    <button class="room-add-btn" onclick="showAddRoom()">+ 채팅방 추가</button>
+    <div class="sidebar-stats">
+      <div class="stat-row">
+        <span class="stat-label">전체 메시지</span>
+        <span class="stat-val" id="stat-total">0</span>
       </div>
-    </div>
-
-    <!-- 로딩 -->
-    <div id="input-loading" style="display:none">
-      <div class="loading">
-        <div class="spinner"></div>
-        <div class="loading-text" id="loading-text">AI가 분류 중...</div>
-        <div class="loading-sub">잠시만 기다려주세요</div>
-      </div>
-    </div>
-
-    <!-- 미리보기 -->
-    <div id="input-preview" style="display:none">
-      <div class="preview-header">
-        <div>
-          <div class="preview-title" id="preview-title">분석 완료</div>
-          <div class="preview-sub" id="preview-sub"></div>
-        </div>
-      </div>
-      <div class="preview-actions">
-        <button class="btn-cancel" onclick="resetInput()">취소</button>
-        <button class="btn-save" onclick="saveAll()">전체 저장</button>
-      </div>
-      <div class="list-body" id="preview-list"></div>
-    </div>
-
-    <!-- 완료 -->
-    <div id="input-done" style="display:none">
-      <div class="done-box">
-        <div class="done-emoji">✅</div>
-        <div class="done-title">저장 완료!</div>
-        <div class="done-sub" id="done-saved"></div>
-        <div class="done-sub" id="done-skipped"></div>
-        <div class="done-sub" id="done-todos"></div>
-        <button class="done-btn" onclick="resetInput()">다시 입력하기</button>
+      <div class="stat-row">
+        <span class="stat-label">미완료 할일</span>
+        <span class="stat-val" id="stat-todo">0</span>
       </div>
     </div>
   </div>
 
-  <!-- 목록 탭 -->
-  <div class="tab-content" id="tab-list">
-    <div class="filter-bar" id="list-filter">
-      <button class="filter-chip on" onclick="filterList('전체',this)">전체</button>
-      <button class="filter-chip" onclick="filterList('지시사항',this)">📋 지시</button>
-      <button class="filter-chip" onclick="filterList('자재/발주',this)">🧱 자재</button>
-      <button class="filter-chip" onclick="filterList('안전',this)">⚠️ 안전</button>
-      <button class="filter-chip" onclick="filterList('하자/보수',this)">🔧 하자</button>
-      <button class="filter-chip" onclick="filterList('일정',this)">📅 일정</button>
-      <button class="filter-chip" onclick="filterList('시공기준',this)">📐 시공</button>
-    </div>
-    <div class="list-body" id="list-body"></div>
-  </div>
-
-  <!-- 할일 탭 -->
-  <div class="tab-content" id="tab-todo">
-    <div class="todo-body" id="todo-body"></div>
-  </div>
-
-  <!-- 검색 탭 -->
-  <div class="tab-content" id="tab-search">
-    <div class="search-top">
-      <input class="search-input" id="search-input" type="text" placeholder="키워드, 발신자 검색..." oninput="doSearch()">
-      <div class="search-filter" id="search-filter">
-        <button class="filter-chip" onclick="toggleSearchTag('지시사항',this)">📋 지시</button>
-        <button class="filter-chip" onclick="toggleSearchTag('자재/발주',this)">🧱 자재</button>
-        <button class="filter-chip" onclick="toggleSearchTag('안전',this)">⚠️ 안전</button>
-        <button class="filter-chip" onclick="toggleSearchTag('하자/보수',this)">🔧 하자</button>
-        <button class="filter-chip" onclick="toggleSearchTag('일정',this)">📅 일정</button>
-        <button class="filter-chip" onclick="toggleSearchTag('시공기준',this)">📐 시공</button>
+  <!-- 메인 -->
+  <div class="main">
+    <div class="header">
+      <div class="header-title" id="header-title">대시보드</div>
+      <div class="header-actions">
+        <button class="btn btn-outline" onclick="showView('input',null)">+ 메시지 입력</button>
       </div>
     </div>
-    <div class="result-count" id="result-count"></div>
-    <div class="search-body" id="search-body"></div>
+
+    <!-- 뷰 컨테이너 -->
+    <div class="content" id="main-content"></div>
+  </div>
+</div>
+
+<!-- 채팅방 추가 모달 -->
+<div class="modal-overlay" id="add-room-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-title">채팅방 추가</div>
+    <input class="modal-input" id="new-room-input" placeholder="채팅방 이름 (예: 전체 관리자방)" />
+    <div class="modal-actions">
+      <button class="btn btn-outline" style="flex:1" onclick="closeModal('add-room-modal')">취소</button>
+      <button class="btn btn-primary" style="flex:2" onclick="addRoom()">추가</button>
+    </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<!-- API 키 모달 -->
-<div id="api-key-modal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:24px;width:90%;max-width:400px;">
-    <div style="font-size:18px;font-weight:700;color:#1a1a2e;margin-bottom:8px;">Gemini API 키 설정</div>
-    <div style="font-size:13px;color:#888;margin-bottom:16px;line-height:1.6;">
-      AI 분류 기능을 사용하려면 Gemini API 키가 필요해요.<br>
-      <a href="https://aistudio.google.com" target="_blank" style="color:#1a1a2e;">aistudio.google.com</a>에서 무료로 발급받을 수 있어요.
-    </div>
-    <input id="api-key-input" type="text" placeholder="AIza..." style="width:100%;padding:10px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:12px;">
-    <div style="display:flex;gap:8px;">
-      <button onclick="document.getElementById('api-key-modal').style.display='none'" style="flex:1;padding:10px;border:1px solid #e0e0e0;border-radius:8px;background:#f5f5f0;font-size:13px;cursor:pointer;font-family:inherit;">나중에</button>
-      <button onclick="saveApiKey()" style="flex:2;padding:10px;border:none;border-radius:8px;background:#1a1a2e;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">저장하기</button>
-    </div>
-  </div>
-</div>
-
 <script>
-let GEMINI_API_KEY = localStorage.getItem('hj_api_key') || '';
-const getGeminiUrl = () => `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-lite:generateContent?key=${GEMINI_API_KEY}`;
+// ===== 데이터 =====
+let rooms = JSON.parse(localStorage.getItem('hj2_rooms') || '["전체 관리자방","석공사 협의방"]');
+let messages = JSON.parse(localStorage.getItem('hj2_msgs') || '[]');
+let todos = JSON.parse(localStorage.getItem('hj2_todos') || '[]');
+let currentView = 'dashboard';
+let currentRoom = null;
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
 
 const TAG_COLORS = {
-  '지시사항': { bg: '#E6F1FB', text: '#0C447C' },
-  '자재/발주': { bg: '#EAF3DE', text: '#27500A' },
-  '안전': { bg: '#FAECE7', text: '#7A2B0C' },
-  '하자/보수': { bg: '#FAEEDA', text: '#6B3A02' },
-  '일정': { bg: '#EEEDFE', text: '#26215C' },
-  '시공기준': { bg: '#FDE8F5', text: '#6B0F4A' },
-  '기타': { bg: '#F1EFE8', text: '#444441' },
+  '지시사항':'tag-지시사항','자재/발주':'tag-자재발주','안전':'tag-안전',
+  '하자/보수':'tag-하자보수','일정':'tag-일정','시공기준':'tag-시공기준','기타':'tag-기타'
 };
 const TAG_EMOJI = {
-  '지시사항':'📋','자재/발주':'🧱','안전':'⚠️',
-  '하자/보수':'🔧','일정':'📅','시공기준':'📐','기타':'📌'
+  '지시사항':'📋','자재/발주':'🧱','안전':'⚠️','하자/보수':'🔧','일정':'📅','시공기준':'📐','기타':'📌'
+};
+const CAL_COLORS = {
+  '지시사항':'ev-지시사항','자재/발주':'ev-자재발주','안전':'ev-안전',
+  '하자/보수':'ev-하자보수','일정':'ev-일정','시공기준':'ev-시공기준','기타':'ev-기타'
 };
 
-// 상태
-let messages = JSON.parse(localStorage.getItem('hj_messages') || '[]');
-let todos = JSON.parse(localStorage.getItem('hj_todos') || '[]');
-let processedIds = JSON.parse(localStorage.getItem('hj_ids') || '[]');
-let previewData = [];
-let currentListFilter = '전체';
-let searchTags = [];
-let collapsedRooms = {};
-
-// 저장
 function save() {
-  localStorage.setItem('hj_messages', JSON.stringify(messages));
-  localStorage.setItem('hj_todos', JSON.stringify(todos));
-  localStorage.setItem('hj_ids', JSON.stringify(processedIds));
+  localStorage.setItem('hj2_rooms', JSON.stringify(rooms));
+  localStorage.setItem('hj2_msgs', JSON.stringify(messages));
+  localStorage.setItem('hj2_todos', JSON.stringify(todos));
   updateStats();
+  renderRoomNav();
 }
 
 function updateStats() {
-  document.getElementById('total-count').textContent = messages.length;
-  document.getElementById('todo-count').textContent = todos.filter(t => !t.done).length;
+  const pending = todos.filter(t=>!t.done).length;
+  document.getElementById('stat-total').textContent = messages.length;
+  document.getElementById('stat-todo').textContent = pending;
+  document.getElementById('nav-todo-cnt').textContent = pending;
 }
 
-// 탭
-function showTab(name) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  event.target.classList.add('active');
-  if (name === 'list') renderList();
-  if (name === 'todo') renderTodo();
-  if (name === 'search') doSearch();
-}
-
-// 텍스트 카운트
-document.getElementById('paste-area').addEventListener('input', function() {
-  document.getElementById('char-count').textContent = this.value.length + '자';
-});
-
-// 카톡 텍스트 파싱
-function parseKakaoText(text) {
-  const messages = [];
-  const lines = text.split('\n');
-  const pcRegex = /^\[(.+?)\] \[(오전|오후) (\d{1,2}:\d{2})\] (.+)/;
-  const mobileRegex = /^(\d{4}년 \d{1,2}월 \d{1,2}일 (?:오전|오후) \d{1,2}:\d{2}), (.+?) : (.+)/;
-  const dateLine = /^-*\s*(\d{4})년 (\d{1,2})월 (\d{1,2})일/;
-
-  let currentDate = new Date();
-  let current = null;
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-
-    const dlMatch = trimmed.match(dateLine);
-    if (dlMatch && !pcRegex.test(trimmed) && !mobileRegex.test(trimmed)) {
-      currentDate = new Date(dlMatch[1], parseInt(dlMatch[2])-1, parseInt(dlMatch[3]));
-      continue;
-    }
-
-    const pcMatch = trimmed.match(pcRegex);
-    if (pcMatch) {
-      if (current) messages.push(current);
-      const [, sender, ampm, timeStr, content] = pcMatch;
-      const [h, m] = timeStr.split(':').map(Number);
-      let hour = h;
-      if (ampm === '오후' && hour !== 12) hour += 12;
-      if (ampm === '오전' && hour === 12) hour = 0;
-      const ts = new Date(currentDate);
-      ts.setHours(hour, m, 0, 0);
-      const dateStr = currentDate.getFullYear() + '년 ' + (currentDate.getMonth()+1) + '월 ' + currentDate.getDate() + '일 ' + ampm + ' ' + timeStr;
-      current = { id: generateId(dateStr, sender, content), dateStr, sender, content, timestamp: ts.getTime() };
-      continue;
-    }
-
-    const mobileMatch = trimmed.match(mobileRegex);
-    if (mobileMatch) {
-      if (current) messages.push(current);
-      const [, dateStr, sender, content] = mobileMatch;
-      current = { id: generateId(dateStr, sender, content), dateStr, sender, content, timestamp: parseDate(dateStr).getTime() };
-      continue;
-    }
-
-    if (current) current.content += '\n' + trimmed;
-  }
-  if (current) messages.push(current);
-  return messages;
-}
-
-function generateId(dateStr, sender, content) {
-  const str = `${dateStr}_${sender}_${content.slice(0, 20)}`;
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return Math.abs(hash).toString(36);
-}
-
-function parseDate(dateStr) {
-  try {
-    const m = dateStr.match(/(\d{4})년 (\d{1,2})월 (\d{1,2})일 (오전|오후) (\d{1,2}):(\d{2})/);
-    if (!m) return new Date();
-    let [, y, mo, d, ampm, h, min] = m;
-    h = parseInt(h);
-    if (ampm === '오후' && h !== 12) h += 12;
-    if (ampm === '오전' && h === 12) h = 0;
-    return new Date(y, mo - 1, d, h, parseInt(min));
-  } catch { return new Date(); }
-}
-
-// AI 분류
-async function analyzeText() {
-  const text = document.getElementById('paste-area').value.trim();
-  const roomName = document.getElementById('room-input').value.trim() || '미분류';
-  if (!text) { showToast('텍스트를 붙여넣어 주세요'); return; }
-
-  const parsed = parseKakaoText(text);
-  if (parsed.length === 0) { showToast('카카오톡 대화 형식을 찾을 수 없어요'); return; }
-
-  showInputView('loading');
-  document.getElementById('loading-text').textContent = `${parsed.length}개 메시지 AI 분류 중...`;
-
-  try {
-    const classified = await classifyWithGemini(parsed, roomName);
-    previewData = classified;
-    showInputView('preview');
-    document.getElementById('preview-title').textContent = `총 ${classified.length}건 중요 메시지 추출`;
-    document.getElementById('preview-sub').textContent = `전체 ${parsed.length}건 중 · 할일 ${classified.filter(m=>m.isTodo).length}건 감지`;
-    renderPreview(classified);
-  } catch (e) {
-    console.error(e);
-    showInputView('main');
-    showToast('AI 분류 중 오류가 발생했어요');
-  }
-}
-
-async function classifyWithGemini(messages, roomName) {
-  const CHUNK = 30;
+// ===== 파싱 =====
+// Claude 분류 표 파싱
+function parseClaudeTable(text) {
   const results = [];
-  for (let i = 0; i < messages.length; i += CHUNK) {
-    const chunk = messages.slice(i, i + CHUNK);
-    const classified = await classifyChunk(chunk, roomName);
-    results.push(...classified);
+  const lines = text.split('\n');
+  
+  for (const line of lines) {
+    if (!line.includes('|')) continue;
+    const cells = line.split('|').map(c => c.trim()).filter(c => c && c !== '-' && !c.match(/^-+$/));
+    if (cells.length < 3) continue;
+    if (cells[0].includes('태그') || cells[0].includes('---')) continue;
+    
+    // | 태그 | 발신자 | 요약 | 할일 | 형식
+    const tag = cells[0]?.replace(/[📋🧱⚠️🔧📅📐📌]/g, '').trim();
+    const sender = cells[1]?.trim();
+    const summary = cells[2]?.trim();
+    const isTodo = cells[3]?.includes('✅') || false;
+    
+    if (!tag || !summary) continue;
+    
+    const knownTags = ['지시사항','자재/발주','안전','하자/보수','일정','시공기준','기타'];
+    const matchedTag = knownTags.find(t => tag.includes(t)) || '기타';
+    
+    results.push({
+      id: Date.now() + Math.random().toString(36).slice(2),
+      tag: matchedTag,
+      sender: sender || '',
+      summary,
+      content: summary,
+      isTodo,
+      timestamp: Date.now(),
+      dateStr: new Date().toLocaleDateString('ko-KR'),
+      roomName: '',
+    });
   }
   return results;
 }
 
-async function classifyChunk(msgs, roomName) {
-  const list = msgs.map((m, i) => `[${i}] ${m.sender}: ${m.content}`).join('\n');
-  const prompt = `당신은 건설현장 카카오톡 메시지를 분석하는 AI입니다.
-아래 메시지들 중 건설현장 관리에 중요한 메시지만 골라서 JSON으로 응답하세요.
+// ===== 뷰 =====
+function showView(name, el) {
+  currentView = name;
+  if (el) {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    el.classList.add('active');
+  }
+  const titles = {
+    dashboard:'대시보드', calendar:'캘린더', todo:'할일',
+    search:'검색', input:'메시지 입력'
+  };
+  document.getElementById('header-title').textContent = titles[name] || name;
+  
+  const content = document.getElementById('main-content');
+  if (name === 'dashboard') renderDashboard(content);
+  else if (name === 'calendar') renderCalendar(content);
+  else if (name === 'todo') renderTodo(content);
+  else if (name === 'search') renderSearch(content);
+  else if (name === 'input') renderInput(content);
+  else if (name === 'room') renderRoom(content);
+}
 
-포함할 메시지:
-- 지시사항: 작업 지시, 조치 요청, 확인 요청
-- 자재/발주: 자재 주문, 수량, 납기
-- 안전: 안전 주의사항, 사고 예방
-- 하자/보수: 하자 발생, 보수 요청
-- 일정: 공사 일정, 방문 일정
-- 시공기준: 시공 방법, 기준, 규격
+// ===== 대시보드 =====
+function renderDashboard(el) {
+  const recent = [...messages].sort((a,b) => b.timestamp - a.timestamp).slice(0, 10);
+  const pending = todos.filter(t => !t.done);
+  const tagCounts = {};
+  messages.forEach(m => { tagCounts[m.tag] = (tagCounts[m.tag]||0)+1; });
+  
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;">
+      <div style="background:var(--surface2);border-radius:10px;border:1px solid var(--border);padding:16px;box-shadow:var(--shadow);">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500;">전체 메시지</div>
+        <div style="font-size:28px;font-weight:700;color:var(--primary)">${messages.length}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;border:1px solid var(--border);padding:16px;box-shadow:var(--shadow);">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500;">미완료 할일</div>
+        <div style="font-size:28px;font-weight:700;color:#DC2626">${pending.length}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:10px;border:1px solid var(--border);padding:16px;box-shadow:var(--shadow);">
+        <div style="font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500;">채팅방</div>
+        <div style="font-size:28px;font-weight:700;color:var(--accent)">${rooms.length}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <div class="section-hdr">최근 메시지</div>
+        ${recent.length ? recent.map(m => msgCard(m)).join('') : '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">메시지가 없어요</div><div class="empty-sub">+ 메시지 입력을 눌러 추가해보세요</div></div>'}
+      </div>
+      <div>
+        <div class="section-hdr">미완료 할일</div>
+        ${pending.length ? pending.slice(0,8).map(t => todoCard(t)).join('') : '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">할일이 없어요</div></div>'}
+      </div>
+    </div>
+  `;
+}
 
-제외할 메시지:
-- 단순 답변(네, ㅇㅋ, 알겠습니다, 확인, 감사합니다)
-- 인사말, 안부
-- 이모티콘만 있는 것
-- 의미없는 짧은 대화
-
-메시지:
-${list}
-
-중요한 것만 골라서 JSON 배열만 응답(다른 텍스트 없이):
-[{"index":0,"tag":"지시사항","summary":"펌프카 배치 지시","isTodo":true}]`;
-
-  const res = await fetch(getGeminiUrl(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.1 },
-    }),
+// ===== 채팅방 뷰 =====
+function renderRoom(el) {
+  const roomMsgs = messages.filter(m => m.roomName === currentRoom);
+  const dateGroups = {};
+  [...roomMsgs].sort((a,b) => a.timestamp - b.timestamp).forEach(m => {
+    const label = formatDate(m.timestamp);
+    if (!dateGroups[label]) dateGroups[label] = [];
+    dateGroups[label].push(m);
   });
-  const data = await res.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
-  const clean = text.replace(/```json|```/g, '').trim();
-  const classified = JSON.parse(clean);
 
-  return classified.map(r => ({
-    ...msgs[r.index],
-    roomName,
-    tag: r.tag || '기타',
-    summary: r.summary || msgs[r.index]?.content?.slice(0, 20),
-    isTodo: r.isTodo || false,
-  })).filter(m => m && m.id);
-}
-
-// 저장
-function saveAll() {
-  let saved = 0, skipped = 0, todoCount = 0;
-  for (const msg of previewData) {
-    if (processedIds.includes(msg.id)) { skipped++; continue; }
-    messages.unshift(msg);
-    processedIds.push(msg.id);
-    saved++;
-    if (msg.isTodo) {
-      todos.unshift({ id: `todo_${msg.id}`, text: msg.summary, tag: msg.tag, roomName: msg.roomName, done: false });
-      todoCount++;
-    }
-  }
-  save();
-  document.getElementById('done-saved').textContent = `새 메시지 ${saved}건 저장`;
-  document.getElementById('done-skipped').textContent = `중복 스킵 ${skipped}건`;
-  document.getElementById('done-todos').textContent = `할일 자동 등록 ${todoCount}건`;
-  showInputView('done');
-}
-
-function resetInput() {
-  document.getElementById('paste-area').value = '';
-  document.getElementById('room-input').value = '';
-  document.getElementById('char-count').textContent = '0자';
-  previewData = [];
-  showInputView('main');
-}
-
-function showInputView(view) {
-  document.getElementById('input-main').style.display = view === 'main' ? 'block' : 'none';
-  document.getElementById('input-loading').style.display = view === 'loading' ? 'block' : 'none';
-  document.getElementById('input-preview').style.display = view === 'preview' ? 'block' : 'none';
-  document.getElementById('input-done').style.display = view === 'done' ? 'block' : 'none';
-}
-
-// 렌더링
-function renderMsgCard(msg, actions = true) {
-  const tc = TAG_COLORS[msg.tag] || TAG_COLORS['기타'];
-  const em = TAG_EMOJI[msg.tag] || '📌';
-  const timeStr = msg.dateStr ? msg.dateStr.split(' ').slice(-2).join(' ') : '';
-  return `
-    <div class="msg-card">
-      <div class="msg-card-top">
-        <span class="tag-badge" style="background:${tc.bg};color:${tc.text}">${em} ${msg.tag}</span>
-        ${msg.isTodo ? '<span class="tag-badge" style="background:#E6F1FB;color:#0C447C">✓ 할일</span>' : ''}
-      </div>
-      ${msg.summary ? `<div class="msg-summary">${msg.summary}</div>` : ''}
-      <div class="msg-content">${msg.content}</div>
-      <div class="msg-footer">
-        <span class="msg-sender">${msg.sender || ''}</span>
-        <span class="msg-time">${timeStr}</span>
-      </div>
-      ${actions ? `
-      <div class="msg-actions">
-        <button class="msg-btn" onclick="addTodo('${msg.id}')">✓ 할일로</button>
-        <button class="msg-btn" onclick="copyMsg('${msg.id}')">복사</button>
-        <button class="msg-btn del" onclick="deleteMsg('${msg.id}')">삭제</button>
-      </div>` : ''}
+  const filterBar = `
+    <div class="filter-bar">
+      <button class="filter-chip on" onclick="filterRoomTag('전체',this)">전체</button>
+      ${['지시사항','자재/발주','안전','하자/보수','일정','시공기준'].map(t =>
+        `<button class="filter-chip" onclick="filterRoomTag('${t}',this)">${TAG_EMOJI[t]} ${t}</button>`
+      ).join('')}
     </div>`;
-}
 
-function renderPreview(msgs) {
-  document.getElementById('preview-list').innerHTML = msgs.map(m => renderMsgCard(m, false)).join('');
-}
-
-function renderList() {
-  const filtered = currentListFilter === '전체' ? messages : messages.filter(m => m.tag === currentListFilter);
-  const roomMap = {};
-  for (const msg of filtered) {
-    const r = msg.roomName || '기타';
-    if (!roomMap[r]) roomMap[r] = [];
-    roomMap[r].push(msg);
-  }
-
-  if (Object.keys(roomMap).length === 0) {
-    document.getElementById('list-body').innerHTML = `<div class="empty"><div class="empty-text">저장된 메시지가 없어요</div><div class="empty-sub">카카오톡 메시지를 입력 탭에서 붙여넣어 보세요</div></div>`;
+  if (roomMsgs.length === 0) {
+    el.innerHTML = filterBar + `<div class="empty"><div class="empty-icon">💬</div><div class="empty-text">메시지가 없어요</div><div class="empty-sub">+ 메시지 입력으로 추가해보세요</div></div>`;
     return;
   }
 
-  let html = '';
-  for (const [roomName, msgs] of Object.entries(roomMap)) {
-    const sorted = [...msgs].sort((a, b) => a.timestamp - b.timestamp);
-    const dateGroups = {};
-    for (const msg of sorted) {
-      const label = formatDate(msg.timestamp);
-      if (!dateGroups[label]) dateGroups[label] = [];
-      dateGroups[label].push(msg);
-    }
-    const isCollapsed = collapsedRooms[roomName];
-    html += `
-      <div class="room-group">
-        <div class="room-hdr" onclick="toggleRoom('${roomName}')">
-          <div class="room-hdr-left">
-            <div class="room-dot"></div>
-            <span class="room-name">${roomName}</span>
-            <span class="room-cnt">${msgs.length}건</span>
-          </div>
-          <span class="room-chevron ${isCollapsed ? 'closed' : ''}">▼</span>
-        </div>
-        <div class="room-msgs" id="room-${roomName}" style="display:${isCollapsed ? 'none' : 'block'}">
-          ${Object.entries(dateGroups).map(([label, ms]) => `
-            <div class="date-label">${label}</div>
-            ${ms.map(m => renderMsgCard(m)).join('')}
-          `).join('')}
-        </div>
-      </div>`;
-  }
-  document.getElementById('list-body').innerHTML = html;
+  el.innerHTML = filterBar + `<div id="room-msg-list">` +
+    Object.entries(dateGroups).map(([label, msgs]) => `
+      <div class="date-label">${label}</div>
+      ${msgs.map(m => msgCard(m)).join('')}
+    `).join('') + '</div>';
 }
 
-function toggleRoom(name) {
-  collapsedRooms[name] = !collapsedRooms[name];
-  renderList();
-}
-
-function filterList(tag, el) {
-  currentListFilter = tag;
-  document.querySelectorAll('#list-filter .filter-chip').forEach(c => c.classList.remove('on'));
+window._roomTagFilter = '전체';
+function filterRoomTag(tag, el) {
+  window._roomTagFilter = tag;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('on'));
   el.classList.add('on');
-  renderList();
+  const roomMsgs = messages.filter(m => m.roomName === currentRoom && (tag === '전체' || m.tag === tag));
+  const list = document.getElementById('room-msg-list');
+  if (list) list.innerHTML = roomMsgs.map(m => msgCard(m)).join('');
 }
 
-function renderTodo() {
+// ===== 입력 뷰 =====
+function renderInput(el) {
+  el.innerHTML = `
+    <div class="input-panel">
+      <div class="input-panel-hdr">
+        <div class="input-panel-title">Claude 분류 결과 붙여넣기</div>
+        <div class="input-panel-sub">Claude가 분류한 표를 복사해서 붙여넣으면 자동으로 저장돼요</div>
+      </div>
+      <div class="input-panel-body">
+        <div class="paste-guide">
+          📌 <strong>사용법</strong><br>
+          1. Claude에게 카톡 대화 붙여넣고 "AI 분류" 요청<br>
+          2. Claude가 표로 정리해준 결과 전체 복사 (Ctrl+A → Ctrl+C)<br>
+          3. 아래에 붙여넣기 (Ctrl+V) → 저장 클릭
+        </div>
+        <div class="room-select-row">
+          <span class="room-select-label">채팅방</span>
+          <select class="room-select" id="input-room-select">
+            ${rooms.map(r => `<option value="${r}">${r}</option>`).join('')}
+          </select>
+        </div>
+        <textarea class="paste-area" id="input-paste" placeholder="| 태그 | 발신자 | 요약 | 할일 |
+|------|--------|------|------|
+| 📅 일정 | 김중일 | 오전 9시 중흥 옥탑 공사 견학 | ✅ |
+..." oninput="updateCharCnt()"></textarea>
+        <div class="input-footer">
+          <span class="char-cnt" id="input-char-cnt">0자</span>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-outline" onclick="clearInput()">지우기</button>
+            <button class="btn btn-primary" onclick="saveInput()">💾 저장</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function updateCharCnt() {
+  const v = document.getElementById('input-paste')?.value || '';
+  document.getElementById('input-char-cnt').textContent = v.length + '자';
+}
+
+function clearInput() {
+  const el = document.getElementById('input-paste');
+  if (el) { el.value = ''; updateCharCnt(); }
+}
+
+function saveInput() {
+  const text = document.getElementById('input-paste')?.value?.trim();
+  const roomName = document.getElementById('input-room-select')?.value;
+  if (!text) { showToast('내용을 붙여넣어 주세요'); return; }
+  
+  const parsed = parseClaudeTable(text);
+  if (parsed.length === 0) { showToast('표 형식을 찾을 수 없어요. Claude 분류 표를 붙여넣어 주세요'); return; }
+  
+  let saved = 0;
+  parsed.forEach(m => {
+    m.roomName = roomName;
+    messages.unshift(m);
+    saved++;
+    if (m.isTodo) {
+      todos.unshift({
+        id: 'todo_' + m.id,
+        text: m.summary,
+        tag: m.tag,
+        roomName,
+        done: false,
+        date: new Date().toISOString().split('T')[0],
+      });
+    }
+  });
+  
+  save();
+  showToast(`✅ ${saved}건 저장 완료! (할일 ${parsed.filter(m=>m.isTodo).length}건)`);
+  clearInput();
+  setTimeout(() => showView('dashboard', null), 1000);
+}
+
+// ===== 캘린더 =====
+function renderCalendar(el) {
+  const year = calYear, month = calMonth;
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date();
+  
+  const monthMsgs = messages.filter(m => {
+    const d = new Date(m.timestamp);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+  
+  const dayEvents = {};
+  monthMsgs.forEach(m => {
+    const d = new Date(m.timestamp).getDate();
+    if (!dayEvents[d]) dayEvents[d] = [];
+    dayEvents[d].push(m);
+  });
+  
+  const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  const dayLabels = ['일','월','화','수','목','금','토'];
+  
+  let cells = '';
+  let dayCount = 1;
+  const totalCells = Math.ceil((firstDay + daysInMonth) / 7) * 7;
+  
+  for (let i = 0; i < totalCells; i++) {
+    const isOtherMonth = i < firstDay || dayCount > daysInMonth;
+    const day = isOtherMonth ? '' : dayCount;
+    const isToday = !isOtherMonth && day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+    const events = day && dayEvents[day] ? dayEvents[day] : [];
+    
+    cells += `<div class="cal-cell ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''}">
+      <div class="cal-date">${day || ''}</div>
+      ${events.slice(0,3).map(e => `
+        <div class="cal-event ${CAL_COLORS[e.tag] || 'ev-기타'}" title="${e.summary}">${e.summary?.slice(0,10)||''}</div>
+      `).join('')}
+      ${events.length > 3 ? `<div style="font-size:10px;color:var(--text3)">+${events.length-3}건</div>` : ''}
+    </div>`;
+    
+    if (!isOtherMonth) dayCount++;
+  }
+  
+  el.innerHTML = `
+    <div class="calendar-wrap">
+      <div class="cal-header">
+        <div class="cal-title">${year}년 ${monthNames[month]}</div>
+        <div class="cal-nav">
+          <button class="cal-nav-btn" onclick="calNav(-1)">‹</button>
+          <button class="cal-nav-btn" onclick="calNav(0)">오늘</button>
+          <button class="cal-nav-btn" onclick="calNav(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid">
+        ${dayLabels.map(d => `<div class="cal-day-label">${d}</div>`).join('')}
+        ${cells}
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <div class="section-hdr">이번 달 일정 메시지</div>
+      ${monthMsgs.filter(m => m.tag === '일정').map(m => msgCard(m)).join('') || '<div class="empty"><div class="empty-text">이번 달 일정이 없어요</div></div>'}
+    </div>
+  `;
+}
+
+function calNav(dir) {
+  if (dir === 0) { calYear = new Date().getFullYear(); calMonth = new Date().getMonth(); }
+  else { calMonth += dir; if (calMonth > 11) { calMonth=0; calYear++; } if (calMonth < 0) { calMonth=11; calYear--; } }
+  renderCalendar(document.getElementById('main-content'));
+}
+
+// ===== 할일 =====
+function renderTodo(el) {
   const pending = todos.filter(t => !t.done);
   const done = todos.filter(t => t.done);
-  let html = '';
-  if (pending.length > 0) {
-    html += `<div class="section-title">미완료 · ${pending.length}건</div>`;
-    html += pending.map(t => todoCard(t)).join('');
+  
+  el.innerHTML = `
+    ${pending.length ? `<div class="section-hdr">미완료 · ${pending.length}건</div>${pending.map(t => todoCard(t)).join('')}` : ''}
+    ${done.length ? `<div class="section-hdr" style="margin-top:20px">완료 · ${done.length}건</div>${done.map(t => todoCard(t)).join('')}` : ''}
+    ${todos.length === 0 ? '<div class="empty"><div class="empty-icon">✅</div><div class="empty-text">할일이 없어요</div><div class="empty-sub">메시지를 저장하면 할일이 자동으로 등록돼요</div></div>' : ''}
+  `;
+}
+
+// ===== 검색 =====
+let searchTagFilters = [];
+function renderSearch(el) {
+  el.innerHTML = `
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input class="search-input" id="search-q" placeholder="키워드, 발신자, 요약 검색..." oninput="doSearch()">
+    </div>
+    <div class="filter-bar" id="search-filter-bar">
+      ${['지시사항','자재/발주','안전','하자/보수','일정','시공기준','기타'].map(t =>
+        `<button class="filter-chip" onclick="toggleSearchTag('${t}',this)">${TAG_EMOJI[t]} ${t}</button>`
+      ).join('')}
+    </div>
+    <div id="search-result-cnt" style="font-size:12px;color:var(--text3);margin-bottom:8px;"></div>
+    <div id="search-results"></div>
+  `;
+}
+
+function doSearch() {
+  const q = document.getElementById('search-q')?.value?.trim() || '';
+  const results = messages.filter(m => {
+    const matchQ = !q || m.summary?.includes(q) || m.content?.includes(q) || m.sender?.includes(q) || m.roomName?.includes(q);
+    const matchTag = searchTagFilters.length === 0 || searchTagFilters.includes(m.tag);
+    return matchQ && matchTag;
+  });
+  document.getElementById('search-result-cnt').textContent = `${results.length}건`;
+  document.getElementById('search-results').innerHTML = results.length
+    ? results.map(m => msgCard(m)).join('')
+    : '<div class="empty"><div class="empty-text">검색 결과가 없어요</div></div>';
+}
+
+function toggleSearchTag(tag, el) {
+  if (searchTagFilters.includes(tag)) {
+    searchTagFilters = searchTagFilters.filter(t => t !== tag);
+    el.classList.remove('on');
+  } else {
+    searchTagFilters.push(tag);
+    el.classList.add('on');
   }
-  if (done.length > 0) {
-    html += `<div class="section-title" style="margin-top:16px">완료 · ${done.length}건</div>`;
-    html += done.map(t => todoCard(t)).join('');
-  }
-  if (todos.length === 0) {
-    html = `<div class="empty"><div class="empty-text">할일이 없어요</div><div class="empty-sub">메시지를 저장하면 할일이 자동 등록돼요</div></div>`;
-  }
-  document.getElementById('todo-body').innerHTML = html;
-  updateStats();
+  doSearch();
+}
+
+// ===== 컴포넌트 =====
+function msgCard(m) {
+  const tc = TAG_COLORS[m.tag] || 'tag-기타';
+  const em = TAG_EMOJI[m.tag] || '📌';
+  return `
+    <div class="msg-card">
+      <div class="msg-card-top">
+        <span class="tag-badge ${tc}">${em} ${m.tag}</span>
+        ${m.isTodo ? '<span class="todo-badge">✓ 할일</span>' : ''}
+        ${m.roomName ? `<span style="font-size:11px;color:var(--text3)">${m.roomName}</span>` : ''}
+      </div>
+      <div class="msg-summary">${m.summary || ''}</div>
+      ${m.content && m.content !== m.summary ? `<div class="msg-content">${m.content}</div>` : ''}
+      <div class="msg-footer">
+        <div class="msg-meta">${m.sender || ''} ${m.dateStr ? '· '+m.dateStr : ''}</div>
+        <div class="msg-actions">
+          <button class="msg-btn" onclick="addTodo('${m.id}')">✓ 할일</button>
+          <button class="msg-btn del" onclick="deleteMsg('${m.id}')">삭제</button>
+        </div>
+      </div>
+    </div>`;
 }
 
 function todoCard(t) {
@@ -659,71 +660,86 @@ function todoCard(t) {
       <div class="todo-check ${t.done ? 'done' : ''}">${t.done ? '✓' : ''}</div>
       <div>
         <div class="todo-text ${t.done ? 'done' : ''}">${t.text}</div>
-        <div class="todo-meta">${em} ${t.tag} · ${t.roomName || ''}</div>
+        <div class="todo-meta">${em} ${t.tag || ''} ${t.roomName ? '· '+t.roomName : ''}</div>
       </div>
     </div>`;
 }
 
-function toggleTodo(id) {
-  todos = todos.map(t => t.id === id ? { ...t, done: !t.done } : t);
-  save();
-  renderTodo();
-}
-
-function doSearch() {
-  const q = document.getElementById('search-input').value.trim();
-  let results = messages.filter(m => {
-    const matchQ = !q || m.content.includes(q) || m.summary?.includes(q) || m.sender?.includes(q);
-    const matchTag = searchTags.length === 0 || searchTags.includes(m.tag);
-    return matchQ && matchTag;
-  });
-  document.getElementById('result-count').textContent = `${results.length}건`;
-  document.getElementById('search-body').innerHTML = results.length ? results.map(m => renderMsgCard(m)).join('') : `<div class="empty"><div class="empty-text">검색 결과가 없어요</div></div>`;
-}
-
-function toggleSearchTag(tag, el) {
-  if (searchTags.includes(tag)) {
-    searchTags = searchTags.filter(t => t !== tag);
-    el.classList.remove('on');
-  } else {
-    searchTags.push(tag);
-    el.classList.add('on');
-  }
-  doSearch();
-}
-
-// 액션
+// ===== 액션 =====
 function addTodo(id) {
-  const msg = messages.find(m => m.id === id);
-  if (!msg) return;
-  if (todos.find(t => t.id === `todo_${id}`)) { showToast('이미 할일로 등록됐어요'); return; }
-  todos.unshift({ id: `todo_${id}`, text: msg.summary || msg.content.slice(0, 30), tag: msg.tag, roomName: msg.roomName, done: false });
+  const m = messages.find(m => m.id === id);
+  if (!m) return;
+  if (todos.find(t => t.id === 'todo_'+id)) { showToast('이미 할일로 등록됐어요'); return; }
+  todos.unshift({ id:'todo_'+id, text:m.summary, tag:m.tag, roomName:m.roomName, done:false });
   save();
-  showToast('할일로 등록했어요!');
+  showToast('✅ 할일 등록!');
 }
 
-function copyMsg(id) {
-  const msg = messages.find(m => m.id === id);
-  if (!msg) return;
-  navigator.clipboard.writeText(msg.content).then(() => showToast('복사했어요!'));
+function toggleTodo(id) {
+  todos = todos.map(t => t.id === id ? {...t, done:!t.done} : t);
+  save();
+  if (currentView === 'todo') renderTodo(document.getElementById('main-content'));
+  else if (currentView === 'dashboard') renderDashboard(document.getElementById('main-content'));
 }
 
 function deleteMsg(id) {
   if (!confirm('이 메시지를 삭제할까요?')) return;
   messages = messages.filter(m => m.id !== id);
   save();
-  renderList();
+  showView(currentView, null);
   showToast('삭제했어요');
 }
 
+// ===== 채팅방 =====
+function renderRoomNav() {
+  const nav = document.getElementById('room-nav-list');
+  nav.innerHTML = rooms.map(r => {
+    const cnt = messages.filter(m => m.roomName === r).length;
+    return `<div class="nav-item" onclick="openRoom('${r}',this)">
+      <span class="icon">💬</span> ${r}
+      ${cnt > 0 ? `<span class="cnt">${cnt}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function openRoom(name, el) {
+  currentRoom = name;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('header-title').textContent = name;
+  currentView = 'room';
+  renderRoom(document.getElementById('main-content'));
+}
+
+function showAddRoom() {
+  document.getElementById('add-room-modal').style.display = 'flex';
+  document.getElementById('new-room-input').focus();
+}
+
+function addRoom() {
+  const name = document.getElementById('new-room-input').value.trim();
+  if (!name) { showToast('채팅방 이름을 입력해주세요'); return; }
+  if (rooms.includes(name)) { showToast('이미 있는 채팅방이에요'); return; }
+  rooms.push(name);
+  save();
+  closeModal('add-room-modal');
+  document.getElementById('new-room-input').value = '';
+  showToast('채팅방이 추가됐어요!');
+}
+
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+// ===== 유틸 =====
 function formatDate(ts) {
   const d = new Date(ts);
   const today = new Date();
-  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
-  const same = (a, b) => a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  if (same(d, today)) return '오늘';
-  if (same(d, yesterday)) return '어제';
-  const days = ['일','월','화','수','목','금','토'];
+  const yesterday = new Date(); yesterday.setDate(today.getDate()-1);
+  const same = (a,b) => a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+  if (same(d,today)) return '오늘';
+  if (same(d,yesterday)) return '어제';
+  const days=['일','월','화','수','목','금','토'];
   return `${d.getMonth()+1}월 ${d.getDate()}일 ${days[d.getDay()]}요일`;
 }
 
@@ -731,32 +747,18 @@ function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2000);
+  setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+// Enter로 채팅방 추가
+document.getElementById('new-room-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addRoom();
+});
 
 // 초기화
 updateStats();
-if (!GEMINI_API_KEY) showApiKeyModal();
-
-function showApiKeyModal() {
-  document.getElementById('api-key-modal').style.display = 'flex';
-}
-
-function saveApiKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key) { alert('API 키를 입력해주세요'); return; }
-  GEMINI_API_KEY = key;
-  localStorage.setItem('hj_api_key', key);
-  document.getElementById('api-key-modal').style.display = 'none';
-  showToast('API 키가 저장됐어요!');
-}
-
-function resetApiKey() {
-  if (!confirm('API 키를 초기화할까요?')) return;
-  GEMINI_API_KEY = '';
-  localStorage.removeItem('hj_api_key');
-  showApiKeyModal();
-}
+renderRoomNav();
+showView('dashboard', document.querySelector('.nav-item'));
 </script>
 </body>
 </html>
