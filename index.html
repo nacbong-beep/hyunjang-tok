@@ -2,8 +2,16 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>현장톡</title>
+<meta name="description" content="건설현장 카카오톡 메시지 관리">
+<meta name="theme-color" content="#1a2332">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="현장톡">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -462,13 +470,8 @@ function renderSidebar() {
           <span class="room-name">${r.name}</span>
           <span class="count">${messages.filter(m=>m.roomName===r.name).length}</span>
           <button class="room-star-btn ${r.favorite?'on':''}" onclick="event.stopPropagation();toggleFav('${r.id}')">${r.favorite?'★':'☆'}</button>
-          ${editMode?`<span class="room-actions">
-            <button class="room-action-btn" onclick="event.stopPropagation();moveRoom('${r.id}',-1)">↑</button>
-            <button class="room-action-btn" onclick="event.stopPropagation();moveRoom('${r.id}',1)">↓</button>
-            <button class="room-action-btn wide" onclick="event.stopPropagation();archiveRoom('${r.id}')">${r.archived?'복원':'숨김'}</button>
-          </span>`:''}
-        </div>`).join('')}
-    `).join('') : ''}
+          ${editMode?'<span class="room-actions"><button class="room-action-btn" onclick="event.stopPropagation();moveRoom(\''+r.id+'\',-1)">↑</button><button class="room-action-btn" onclick="event.stopPropagation();moveRoom(\''+r.id+'\',1)">↓</button><button class="room-action-btn wide" onclick="event.stopPropagation();archiveRoom(\''+r.id+'\')">'+(r.archived?'복원':'숨김')+'</button></span>':''}
+        </div>`).join('') : ''}
     </div>`;
 }
 
