@@ -48,7 +48,7 @@ button,input,select,textarea{font-family:inherit}
 .side-stat-row span:first-child{color:rgba(255,255,255,.45)}
 
 /* 헤더 */
-.header{height:62px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0}
+.header{min-height:62px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 22px;flex-shrink:0;flex-wrap:wrap;gap:8px}
 .header-title{font-size:17px;font-weight:800}
 .header-sub{font-size:12px;color:var(--muted);margin-top:2px}
 .header-actions{display:flex;gap:8px;align-items:center}
@@ -66,8 +66,8 @@ button,input,select,textarea{font-family:inherit}
 .dashboard-left{min-width:0}
 .dashboard-right{position:sticky;top:0}
 .dashboard-guide{background:linear-gradient(135deg,#fff,#faf7f2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:18px;box-shadow:var(--shadow)}
-.dashboard-guide-title{font-size:17px;font-weight:800;margin-bottom:5px}
-.dashboard-guide-desc{font-size:13px;color:var(--muted);line-height:1.55}
+.dashboard-guide-title{font-size:14px;font-weight:700;margin-bottom:5px}
+.dashboard-guide-desc{font-size:12px;color:var(--muted);line-height:1.55}
 .dashboard-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .summary-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:15px;box-shadow:var(--shadow);position:relative;overflow:hidden;cursor:pointer}
 .summary-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--accent)}
@@ -213,10 +213,13 @@ button,input,select,textarea{font-family:inherit}
 
   <main class="main">
     <header class="header">
-      <div>
+      <div style="display:flex;align-items:center;gap:16px;">
         <div class="header-title" id="header-title">대시보드</div>
-        <div class="header-sub" id="header-sub">현재 localStorage 저장 모드</div>
+        <div id="header-guide" style="font-size:12px;color:var(--muted);border-left:2px solid var(--border2);padding-left:12px;line-height:1.4;max-width:400px;display:none">
+          오전 일과 후나 하루 일과가 끝난 뒤 카톡 대화를 붙여넣고<br>지시사항·공지사항·내일 할 일·이번 주 할 일을 분류해 둡니다.
+        </div>
       </div>
+      <div class="header-sub" id="header-sub" style="margin-top:2px">현재 localStorage 저장 모드</div>
       <div class="header-actions">
         <button class="btn-sm" onclick="exportBackup()">💾 백업</button>
         <button class="btn-sm" onclick="importBackup()">📂 복원</button>
@@ -336,7 +339,13 @@ function todayKey() { return dateKey(new Date()); }
 function addDaysKey(n) { const d = new Date(); d.setDate(d.getDate()+n); return dateKey(d); }
 function dateKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function isSameDay(a,b) { return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
-function formatDate(v) { if(!v) return ''; const d=new Date(v); return isNaN(d)?v:`${d.getMonth()+1}/${d.getDate()}`; }
+function formatDate(v) { 
+  if(!v) return ''; 
+  const d=new Date(v); 
+  if(isNaN(d)) return v;
+  const days=['일','월','화','수','목','금','토'];
+  return `${d.getMonth()+1}/${d.getDate()} ${days[d.getDay()]}`;
+}
 function normalizeTag(t) {
   const map={'자재/발주':'자재발주','하자/보수':'하자보수','안전':'안전관리','지시':'지시사항','공지':'공지사항','시공':'시공기준','품질':'품질관리'};
   return map[t]||t||'기타';
@@ -418,7 +427,9 @@ function setView(v) {
   currentView = v;
   if(v.startsWith('cat_')) { selectedCategory=v.replace('cat_',''); currentView='search'; }
   const titles = {dashboard:'대시보드',calendar:'캘린더',todo:'할일',search:'검색',input:'메시지 입력'};
-  document.getElementById('header-title').textContent = titles[v]||v;
+  document.getElementById('header-title').textContent = titles[v]||(v.startsWith('cat_')?v.replace('cat_','')+'  검색':v);
+  const guideEl = document.getElementById('header-guide');
+  if(guideEl) guideEl.style.display = (currentView==='dashboard') ? 'block' : 'none';
   renderSidebar();
   const el = document.getElementById('main-content');
   if(currentView==='dashboard') renderDashboard(el);
@@ -465,7 +476,7 @@ function confirmAddRoom() {
 function renderDashboard(el) {
   const today = new Date();
   const todayMsgs = messages.filter(m=>isSameDay(new Date(m.createdAt),today));
-  const missedInstr = messages.filter(m=>['지시사항','하자보수','안전관리','품질관리'].includes(normalizeTag(m.tag))&&isSameDay(new Date(m.createdAt),today));
+  const missedInstr = messages.filter(m=>normalizeTag(m.tag)==='지시사항'&&isSameDay(new Date(m.createdAt),today));
   const notices = messages.filter(m=>normalizeTag(m.tag)==='공지사항'&&isSameDay(new Date(m.createdAt),today));
   const calEvents = getCalendarEvents();
   const pending = todos.filter(t=>!t.done);
@@ -475,10 +486,7 @@ function renderDashboard(el) {
   el.innerHTML = `
     <div class="dashboard-layout">
       <div class="dashboard-left">
-        <div class="dashboard-guide">
-          <div class="dashboard-guide-title">오늘 현장에서 놓친 메시지를 정리해보세요</div>
-          <div class="dashboard-guide-desc">오전 일과 후나 하루 일과가 끝난 뒤 카톡 대화를 붙여넣고, 지시사항·공지사항·내일 할 일·이번 주 할 일을 분류해 둡니다.</div>
-        </div>
+
         <div class="dashboard-summary">
           <div class="summary-card missed" onclick="setView('cat_지시사항')"><div class="card-label">오늘 놓친 지시사항</div><div class="card-num">${missedInstr.length}</div><div class="card-hint">확인 또는 후속 조치 필요</div></div>
           <div class="summary-card calendar" onclick="setView('calendar')"><div class="card-label">캘린더 일정</div><div class="card-num">${calEvents.length}</div><div class="card-hint">내일·이번 주 일정 포함</div></div>
@@ -541,6 +549,14 @@ function getCalendarEvents() {
     .sort((a,b)=>a.date.localeCompare(b.date));
 }
 
+function getScheduleEvents() {
+  const today = todayKey();
+  return messages
+    .filter(m=>m.messageDate&&m.messageDate>=today&&normalizeTag(m.tag)==='일정')
+    .map(m=>({id:m.id,date:m.messageDate,title:m.summary,tag:normalizeTag(m.tag),roomName:m.roomName}))
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+
 function calendarCard() {
   const y=calYear,mo=calMonth;
   const firstDay=new Date(y,mo,1).getDay();
@@ -579,7 +595,7 @@ function calendarCard() {
       </div>
       <div class="calendar-list">
         <div class="calendar-list-title">다가오는 일정</div>
-        ${events.slice(0,4).map(e=>`
+        ${getScheduleEvents().slice(0,4).map(e=>`
           <div class="mini-schedule">
             <div class="mini-date">${formatDate(e.date)}</div>
             <div class="mini-text">${e.title}</div>
@@ -607,12 +623,48 @@ function toggleTodo(id) {
   else if(currentView==='dashboard') renderDashboard(document.getElementById('main-content'));
 }
 
+let checkedTodos = new Set();
+
 function renderTodoView(el) {
   const pending=todos.filter(t=>!t.done);
   const done=todos.filter(t=>t.done);
   el.innerHTML = `
-    <div class="panel"><div class="panel-head"><div class="panel-title">미완료 · ${pending.length}건</div></div>${pending.map(t=>todoItem(t)).join('')||'<div class="empty-box">미완료 할일이 없습니다.</div>'}</div>
+    <div class="panel">
+      <div class="panel-head">
+        <div class="panel-title">미완료 · ${pending.length}건</div>
+        <button class="btn-primary" style="font-size:12px;padding:6px 12px;" onclick="completeChecked()">✓ 선택 완료처리</button>
+      </div>
+      ${pending.map(t=>todoItemCheckable(t)).join('')||'<div class="empty-box">미완료 할일이 없습니다.</div>'}
+    </div>
     <div class="panel"><div class="panel-head"><div class="panel-title">완료 · ${done.length}건</div></div>${done.map(t=>todoItem(t)).join('')||'<div class="empty-box">완료된 할일이 없습니다.</div>'}</div>`;
+}
+
+function todoItemCheckable(t) {
+  const tag=normalizeTag(t.tag);
+  const isChecked = checkedTodos.has(t.id);
+  return `<div class="item" style="display:flex;gap:10px;align-items:flex-start;">
+    <input type="checkbox" style="margin-top:4px;width:16px;height:16px;cursor:pointer;" ${isChecked?'checked':''} onchange="toggleCheck('${t.id}',this.checked)">
+    <div style="flex:1;cursor:pointer;" onclick="toggleTodo('${t.id}')">
+      <span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag}</span>
+      <div class="item-title">${t.title}</div>
+      <div class="meta">${[formatDate(t.dueDate),t.roomName].filter(Boolean).join(' · ')}</div>
+    </div>
+  </div>`;
+}
+
+function toggleCheck(id, checked) {
+  if(checked) checkedTodos.add(id);
+  else checkedTodos.delete(id);
+}
+
+function completeChecked() {
+  if(checkedTodos.size===0){showToast('완료할 항목을 선택해주세요');return;}
+  if(!confirm(`선택한 ${checkedTodos.size}건을 완료처리할까요?`)) return;
+  todos=todos.map(t=>checkedTodos.has(t.id)?{...t,done:true,doneAt:new Date().toISOString()}:t);
+  checkedTodos.clear();
+  save();
+  renderTodoView(document.getElementById('main-content'));
+  showToast(`✅ ${checkedTodos.size||'선택한 항목'} 완료처리 완료!`);
 }
 
 // ===== 검색 =====
@@ -784,9 +836,10 @@ function parseAiTable(text,roomName) {
     const dateCell=cells[4]||summary;
     if(!summary) continue;
     const finalTag=TAGS.includes(tag)?tag:guessTag(summary);
+    const extractedDate = extractDateKey(`${summary} ${dateCell}`);
     rows.push({
       tempId:uid(),roomName,tag:finalTag,sender,summary,content:summary,
-      messageDate:extractDateKey(`${summary} ${dateCell}`),
+      messageDate:extractedDate||todayKey(),
       isTodo:/✅|todo|할일|예|yes|y/i.test(todoCell)||shouldBeTodo(summary,finalTag),
     });
   }
