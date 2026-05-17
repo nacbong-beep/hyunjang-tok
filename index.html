@@ -799,12 +799,12 @@ function calendarCard() {
   return `
     <div class="calendar-card">
       <div class="calendar-head">
-        <div class="calendar-title">${y}년 ${monthNames[mo]} 캘린더</div>
-        <div class="calendar-nav">
-          <button onclick="calNav(-1)">‹</button>
-          <button onclick="calNav(0)">오늘</button>
-          <button onclick="calNav(1)">›</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button onclick="calNav(-1)" style="height:28px;min-width:28px;border:1px solid var(--border2);background:var(--card);border-radius:8px;font-size:14px;color:var(--muted);font-weight:700;cursor:pointer;padding:0 8px;transition:all 0.15s">‹</button>
+          <div class="calendar-title">${y}년 ${monthNames[mo]}</div>
+          <button onclick="calNav(1)" style="height:28px;min-width:28px;border:1px solid var(--border2);background:var(--card);border-radius:8px;font-size:14px;color:var(--muted);font-weight:700;cursor:pointer;padding:0 8px;transition:all 0.15s">›</button>
         </div>
+        <button onclick="calNav(0)" style="height:28px;border:1px solid var(--border2);background:var(--card);border-radius:8px;font-size:12px;color:var(--muted);font-weight:700;cursor:pointer;padding:0 12px;transition:all 0.15s">오늘</button>
       </div>
       <div class="calendar-grid">
         ${['일','월','화','수','목','금','토'].map(d=>`<div class="day-label">${d}</div>`).join('')}
@@ -1225,15 +1225,10 @@ function renderSettingsView(el) {
 
       <!-- 현장/프로필 정보 -->
       <div class="panel">
-        <div class="panel-head"><div class="panel-title">🏗️ 현장 / 프로필 정보</div></div>
-        <div class="input-grid" style="margin-bottom:0">
-          <label class="field-label">현장명
-            <input class="field-control" id="set-site" placeholder="현장명" value="${appSettings.siteName||''}">
-          </label>
-          <label class="field-label">담당자 이름
-            <input class="field-control" id="set-user" placeholder="이름" value="${appSettings.userName||''}">
-          </label>
-        </div>
+        <div class="panel-head"><div class="panel-title">🏗️ 현장 정보</div></div>
+        <label class="field-label">현장명
+          <input class="field-control" id="set-site" placeholder="현장명" value="${appSettings.siteName||''}">
+        </label>
         <button class="btn-primary" style="margin-top:12px" onclick="saveProfileSettings()">저장</button>
       </div>
 
@@ -1291,10 +1286,10 @@ function renderSettingsView(el) {
       <!-- 데이터 관리 -->
       <div class="panel">
         <div class="panel-head"><div class="panel-title">📁 데이터 관리</div></div>
-        <div style="display:flex;gap:10px;flex-wrap:wrap">
-          <button class="btn-ghost" onclick="exportBackup()" style="flex:1;min-width:100px">💾 백업 다운로드</button>
-          <button class="btn-ghost" onclick="importBackup()" style="flex:1;min-width:100px">📂 백업 복원</button>
-          <button class="btn-ghost" onclick="exportCSV()" style="flex:1;min-width:100px">📊 엑셀 내보내기</button>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+          <button class="btn-ghost" onclick="exportBackup()" style="font-size:12px;padding:9px 4px">💾 백업</button>
+          <button class="btn-ghost" onclick="importBackup()" style="font-size:12px;padding:9px 4px">📂 복원</button>
+          <button class="btn-ghost" onclick="exportCSV()" style="font-size:12px;padding:9px 4px">📊 엑셀</button>
         </div>
       </div>
 
@@ -1303,7 +1298,6 @@ function renderSettingsView(el) {
 
 function saveProfileSettings() {
   appSettings.siteName = document.getElementById('set-site').value.trim();
-  appSettings.userName = document.getElementById('set-user').value.trim();
   save();
   updateLogoSub();
   showToast('✅ 저장됐어요!');
@@ -1614,9 +1608,8 @@ document.getElementById('header-sub').textContent = '☁️ Supabase 연결 중.
 function updateLogoSub() {
   const el = document.getElementById('logo-sub2');
   if(!el) return;
-  const parts = [appSettings.siteName, appSettings.userName].filter(Boolean);
-  el.textContent = parts.join(' · ');
-  el.style.display = parts.length ? 'block' : 'none';
+  el.textContent = appSettings.siteName || '';
+  el.style.display = appSettings.siteName ? 'block' : 'none';
 }
 
 function initApp() {
