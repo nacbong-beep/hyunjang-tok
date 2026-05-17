@@ -1455,6 +1455,17 @@ function onDayDrop(e, toIdx, dateStr) {
   // localStorage에 저장
   localStorage.setItem(orderKey, JSON.stringify(allIds));
 
+  // customEvents 배열 순서도 반영
+  const customOrder = allIds.filter(id => customEvents.find(e=>e.id===id));
+  customEvents.sort((a,b)=>{
+    const ai = customOrder.indexOf(a.id);
+    const bi = customOrder.indexOf(b.id);
+    if(ai===-1&&bi===-1) return 0;
+    if(ai===-1) return 1;
+    if(bi===-1) return -1;
+    return ai-bi;
+  });
+
   save();
   handleDayClick(dateStr);
 }
