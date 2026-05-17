@@ -259,10 +259,13 @@ a{color:inherit;text-decoration:none}
 @media(max-width:640px){
   .main{width:100%}
   .dashboard-summary{grid-template-columns:1fr 1fr}
-  .header{padding:0 12px;min-height:52px;flex-wrap:nowrap}
-  .header-title{font-size:14px}
+  .header{padding:0 8px;min-height:48px;flex-wrap:nowrap;gap:4px}
+  .header-title{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:80px}
+  .header-actions{gap:4px;flex-shrink:0}
   .content{padding:10px}
   .btn-sm{display:none}
+  .btn-primary{padding:7px 10px;font-size:11px;white-space:nowrap}
+  #header-sub{display:none}
   .card-num{font-size:26px}
   .card-label{font-size:10px}
   .card-hint{font-size:10px}
@@ -274,9 +277,11 @@ a{color:inherit;text-decoration:none}
 }
 @media(max-width:480px){
   .dashboard-summary{grid-template-columns:1fr 1fr;gap:8px}
-  .summary-card{padding:12px 10px}
-  .card-num{font-size:24px}
-  .summary-card-icon{font-size:18px;margin-bottom:5px}
+  .summary-card{padding:10px 8px}
+  .card-num{font-size:22px}
+  .summary-card-icon{font-size:16px;margin-bottom:4px}
+  .header-title{max-width:60px;font-size:12px}
+  .btn-primary{padding:6px 8px;font-size:11px}
 }
 </style>
 </head>
@@ -1355,29 +1360,68 @@ async function checkAuth() {
   if(hash.includes('access_token')) {
     const params = new URLSearchParams(hash.substring(1));
     const accessToken = params.get('access_token');
+    const refreshToken = params.get('refresh_token');
     if(accessToken) {
-      sessionStorage.setItem('hj_token', accessToken);
+      localStorage.setItem('hj_token', accessToken);
+      if(refreshToken) localStorage.setItem('hj_refresh_token', refreshToken);
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }
 
-  const token = sessionStorage.getItem('hj_token');
+  const token = localStorage.getItem('hj_token');
   if(!token) return false;
 
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
     });
-    if(!res.ok) { sessionStorage.removeItem('hj_token'); return false; }
+    if(!res.ok) {
+      // 토큰 만료 → 자동갱신 시도
+      const refreshed = await refreshToken();
+      if(!refreshed) { localStorage.removeItem('hj_token'); return false; }
+      return await checkAuth();
+    }
     const user = await res.json();
     if(user.email === ALLOWED_EMAIL) {
+      // 45분마다 자동갱신
+      setTimeout(autoRefreshToken, 45 * 60 * 1000);
       return true;
     } else {
       alert(`접근 권한이 없습니다.\n(${user.email})`);
-      sessionStorage.removeItem('hj_token');
+      localStorage.removeItem('hj_token');
+      localStorage.removeItem('hj_refresh_token');
       return false;
     }
   } catch(e) { return false; }
+}
+
+async function refreshToken() {
+  const refresh = localStorage.getItem('hj_refresh_token');
+  if(!refresh) return false;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refresh })
+    });
+    if(!res.ok) return false;
+    const data = await res.json();
+    if(data.access_token) {
+      localStorage.setItem('hj_token', data.access_token);
+      if(data.refresh_token) localStorage.setItem('hj_refresh_token', data.refresh_token);
+      return true;
+    }
+    return false;
+  } catch(e) { return false; }
+}
+
+async function autoRefreshToken() {
+  const ok = await refreshToken();
+  if(ok) {
+    // 갱신 성공 → 45분 후 다시 갱신
+    setTimeout(autoRefreshToken, 45 * 60 * 1000);
+    console.log('✅ 토큰 자동갱신 완료');
+  }
 }
 
 // ===== 초기화 =====
