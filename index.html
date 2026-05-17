@@ -228,6 +228,7 @@ a{color:inherit;text-decoration:none}
 
 /* 직접 일정 */
 .cal-cell.has-custom{background:#f0f9ff}
+.cal-cell.off-day{background:#fff0f0!important}
 .cal-event.custom-ev{background:#dbeafe;color:#1e40af;border-left:2px solid #3b82f6}
 .ev-edit-btn{font-size:9px;cursor:pointer;opacity:.6;margin-left:2px}
 .ev-edit-btn:hover{opacity:1}
@@ -318,9 +319,7 @@ a{color:inherit;text-decoration:none}
       </div>
       <div class="header-actions">
         <div id="header-sub" style="font-size:11px;color:var(--soft);padding-right:8px;border-right:1px solid var(--border2);">현재 localStorage 저장 모드</div>
-        <button class="btn-sm" onclick="exportBackup()">💾 백업</button>
-        <button class="btn-sm" onclick="importBackup()">📂 복원</button>
-        <button class="btn-sm" onclick="exportCSV()">📊 엑셀</button>
+        <button class="btn-sm" onclick="setView('settings')">⚙️ 설정</button>
         <button class="btn-primary" onclick="setView('input')">+ 메시지 입력</button>
       </div>
     </header>
@@ -522,6 +521,10 @@ let inputMode = 'table';
 let customEvents = JSON.parse(localStorage.getItem('hj3_custom_events') || '[]');
 let editingEventId = null;
 
+// 휴무/근무 설정
+let offDays = JSON.parse(localStorage.getItem('hj3_off_days') || '[]'); // ['2026-05-18', ...]
+let workSaturdays = JSON.parse(localStorage.getItem('hj3_work_sat') || '[]'); // ['2026-05-24', ...]
+
 // ===== 유틸 =====
 function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
 function todayKey() { return dateKey(new Date()); }
@@ -553,6 +556,8 @@ function save() {
   localStorage.setItem('hj3_todos', JSON.stringify(todos));
   localStorage.setItem('hj3_starred', JSON.stringify(starredRooms));
   localStorage.setItem('hj3_custom_events', JSON.stringify(customEvents));
+  localStorage.setItem('hj3_off_days', JSON.stringify(offDays));
+  localStorage.setItem('hj3_work_sat', JSON.stringify(workSaturdays));
   updateStats();
   renderSidebar();
   saveToSupabase().catch(e => console.error(e));
@@ -582,6 +587,7 @@ function renderSidebar() {
       ${navItem('📅','캘린더','calendar',calEvents.length)}
       ${navItem('✅','할일','todo',pending)}
       ${navItem('🔍','검색','search')}
+      ${navItem('⚙️','설정','settings')}
     </div>
     <div class="nav-section">
       <div class="nav-label nav-collapsible" onclick="toggleSection('찾아보기')">
@@ -618,7 +624,7 @@ function setView(v) {
   currentView = v;
   closeSidebar();
   if(v.startsWith('cat_')) { selectedCategory=v.replace('cat_',''); currentView='search'; }
-  const titles = {dashboard:'대시보드',calendar:'캘린더',todo:'할일',search:'검색',input:'메시지 입력'};
+  const titles = {dashboard:'대시보드',calendar:'캘린더',todo:'할일',search:'검색',input:'메시지 입력',settings:'설정'};
   document.getElementById('header-title').textContent = titles[v]||(v.startsWith('cat_')?v.replace('cat_','')+'  검색':v);
   const guideEl = document.getElementById('header-guide');
   if(guideEl) guideEl.style.display = (currentView==='dashboard') ? 'block' : 'none';
@@ -629,6 +635,7 @@ function setView(v) {
   else if(currentView==='todo') renderTodoView(el);
   else if(currentView==='search') renderSearchView(el);
   else if(currentView==='input') renderInputView(el);
+  else if(currentView==='settings') renderSettingsView(el);
   else if(currentView.startsWith('room_')) renderRoomView(el,v);
 }
 
@@ -779,8 +786,15 @@ function calendarCard() {
           const holiday=getHoliday(y,mo,date.getDate());
           const hasCustom=dayCustom.length>0;
           const hasAny = dayEvents.length>0 || dayCustom.length>0;
-          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${hasCustom?'has-custom':''}" onclick="handleDayClick('${dk}')">
-            <div class="cal-date">${date.getDate()}</div>
+          const isOffDay = offDays.includes(dk);
+          const isWorkSat = workSaturdays.includes(dk) && date.getDay()===6;
+          const isSat = date.getDay()===6;
+          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom?'has-custom':''}" onclick="handleDayClick('${dk}')">
+            <div class="cal-date" style="${isOffDay?'color:#ef4444':isSat&&!isWorkSat?'color:#94a3b8':''}">
+              ${date.getDate()}
+              ${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:1px">휴무</span>':''}
+              ${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:1px">근무</span>':''}
+            </div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
             ${dayEvents.slice(0,2).map(e=>`<span class="cal-event ${evClass(e.tag)}" title="${e.title}">${shortTag(e.tag)}</span>`).join('')}
             ${dayCustom.slice(0,1).map(e=>`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
@@ -1155,7 +1169,100 @@ function doQuickSearch() {
   setView('search');
 }
 
-// ===== 직접 일정 =====
+// ===== 설정 화면 =====
+function renderSettingsView(el) {
+  // 이번달 ~ 다음달 토요일 목록 생성
+  const saturdays = [];
+  const now = new Date();
+  for(let m=0; m<3; m++) {
+    const year = now.getFullYear();
+    const month = now.getMonth() + m;
+    const daysInMonth = new Date(year, month+1, 0).getDate();
+    for(let d=1; d<=daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      if(date.getDay()===6) saturdays.push(dateKey(date));
+    }
+  }
+
+  el.innerHTML = `
+    <div style="max-width:600px">
+      <!-- 백업/복원/엑셀 -->
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">📁 데이터 관리</div></div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn-ghost" onclick="exportBackup()" style="flex:1;min-width:100px">💾 백업 다운로드</button>
+          <button class="btn-ghost" onclick="importBackup()" style="flex:1;min-width:100px">📂 백업 복원</button>
+          <button class="btn-ghost" onclick="exportCSV()" style="flex:1;min-width:100px">📊 엑셀 내보내기</button>
+        </div>
+      </div>
+
+      <!-- 휴무일 설정 -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">🔴 휴무일 설정</div>
+          <div class="meta">선택한 날짜가 빨간색으로 표시됩니다</div>
+        </div>
+        <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center">
+          <input type="date" id="off-day-input" class="field-control" style="flex:1" value="${todayKey()}">
+          <button class="btn-primary" onclick="addOffDay()">추가</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px" id="off-day-list">
+          ${offDays.sort().map(d=>`
+            <div style="display:flex;align-items:center;gap:4px;background:#fee2e2;border-radius:8px;padding:5px 10px">
+              <span style="font-size:12px;font-weight:700;color:#b91c1c">${formatDate(d)}</span>
+              <button onclick="removeOffDay('${d}')" style="border:none;background:none;color:#b91c1c;cursor:pointer;font-size:14px;line-height:1">×</button>
+            </div>`).join('')||'<div class="empty-box" style="width:100%">등록된 휴무일이 없습니다.</div>'}
+        </div>
+      </div>
+
+      <!-- 토요일 근무 설정 -->
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">🟢 토요일 근무 설정</div>
+          <div class="meta">격주 근무하는 토요일을 선택하세요</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          ${saturdays.map(dk=>{
+            const d = new Date(dk);
+            const isWork = workSaturdays.includes(dk);
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:${isWork?'#dcfce7':'var(--bg)'}">
+              <span style="font-size:13px;font-weight:700;color:${isWork?'#15803d':'var(--muted)'}">${formatDate(dk)} 토요일</span>
+              <button onclick="toggleWorkSat('${dk}')" style="border:none;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;background:${isWork?'#15803d':'var(--border2)'};color:${isWork?'#fff':'var(--muted)'}">
+                ${isWork?'✅ 근무':'근무 없음'}
+              </button>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>`;
+}
+
+function addOffDay() {
+  const date = document.getElementById('off-day-input').value;
+  if(!date) return;
+  if(offDays.includes(date)) { showToast('이미 등록된 날짜예요'); return; }
+  offDays.push(date);
+  save();
+  renderSettingsView(document.getElementById('main-content'));
+  showToast('✅ 휴무일 추가됐어요!');
+}
+
+function removeOffDay(date) {
+  offDays = offDays.filter(d=>d!==date);
+  save();
+  renderSettingsView(document.getElementById('main-content'));
+  showToast('🗑️ 휴무일 삭제됐어요');
+}
+
+function toggleWorkSat(date) {
+  if(workSaturdays.includes(date)) {
+    workSaturdays = workSaturdays.filter(d=>d!==date);
+  } else {
+    workSaturdays.push(date);
+  }
+  save();
+  renderSettingsView(document.getElementById('main-content'));
+}
 function getUpcomingCustomEvents() {
   const today = todayKey();
   return customEvents
