@@ -344,6 +344,18 @@ a{color:inherit;text-decoration:none}
 
 <div class="toast" id="toast"></div>
 
+<!-- 할일 상세 모달 -->
+<div class="modal-overlay" id="todo-detail-modal" style="display:none">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">📋 할일 상세</div>
+    <div id="todo-detail-content" style="margin-bottom:16px"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" style="flex:1" onclick="closeTodoDetail()">닫기</button>
+      <button id="todo-detail-done-btn" class="btn-primary" style="flex:2">✅ 완료처리</button>
+    </div>
+  </div>
+</div>
+
 <!-- 날짜별 일정 목록 모달 -->
 <div class="modal-overlay" id="day-modal" style="display:none">
   <div class="modal" style="max-width:420px">
@@ -1133,11 +1145,31 @@ function msgItem(m,checked=false) {
 function todoItem(t) {
   const tag=normalizeTag(t.tag);
   const doneAt=t.doneAt?` · 완료 ${formatDate(t.doneAt)}`:'';
-  return `<div class="item todo-click ${t.done?'done':''}" onclick="toggleTodo('${t.id}')">
+  return `<div class="item todo-click ${t.done?'done':''}" onclick="openTodoDetail('${t.id}')">
     <span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag}</span>
     <div class="item-title">${t.title}</div>
     <div class="meta">${[formatDate(t.dueDate),t.roomName].filter(Boolean).join(' · ')}${doneAt}</div>
   </div>`;
+}
+
+function openTodoDetail(id) {
+  const t = todos.find(t=>t.id===id);
+  if(!t) return;
+  const tag = normalizeTag(t.tag);
+  const m = messages.find(m=>m.id===t.messageId);
+  document.getElementById('todo-detail-content').innerHTML = `
+    <span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag}</span>
+    <div style="font-size:15px;font-weight:800;margin:10px 0 6px;line-height:1.5">${t.title}</div>
+    ${m?`<div style="background:var(--bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:1.7;margin-bottom:8px">${m.content||m.summary}</div>`:''}
+    <div class="meta">${[formatDate(t.dueDate),t.roomName].filter(Boolean).join(' · ')}</div>
+  `;
+  document.getElementById('todo-detail-done-btn').textContent = t.done ? '✅ 완료 취소' : '✅ 완료처리';
+  document.getElementById('todo-detail-done-btn').onclick = () => { toggleTodo(id); closeTodoDetail(); };
+  document.getElementById('todo-detail-modal').style.display = 'flex';
+}
+
+function closeTodoDetail() {
+  document.getElementById('todo-detail-modal').style.display = 'none';
 }
 
 // ===== 백업/복원/엑셀 =====
