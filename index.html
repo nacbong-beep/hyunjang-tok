@@ -154,7 +154,7 @@ a{color:inherit;text-decoration:none}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border)}
 .day-label{padding:8px 4px;text-align:center;font-size:10px;font-weight:800;color:var(--soft);background:var(--bg);border-right:1px solid var(--border);letter-spacing:.5px}
 .day-label:first-child{color:#ef4444}
-.cal-cell{min-height:66px;padding:6px;border-right:1px solid var(--border);border-top:1px solid var(--border);background:var(--card);cursor:pointer;transition:background 0.1s}
+.cal-cell{min-height:76px;padding:6px;border-right:1px solid var(--border);border-top:1px solid var(--border);background:var(--card);cursor:pointer;transition:background 0.1s}
 .cal-cell:hover{background:var(--bg)}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-date{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%}
@@ -368,6 +368,37 @@ a{color:inherit;text-decoration:none}
       <button class="btn-ghost" style="flex:1" onclick="closeEventModal()">취소</button>
       <button id="event-delete-btn" class="btn-ghost" style="flex:1;color:#dc2626;border-color:#fecaca;display:none" onclick="deleteCustomEvent()">삭제</button>
       <button class="btn-primary" style="flex:2" onclick="saveCustomEvent()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- 메시지 일정 수정 모달 -->
+<div class="modal-overlay" id="msg-event-modal" style="display:none">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title">📋 일정 수정</div>
+    <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">제목/요약</label>
+    <input class="modal-input" id="msg-event-summary" placeholder="일정 제목" />
+    <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">날짜</label>
+    <input class="modal-input" id="msg-event-date" type="date" />
+    <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">태그</label>
+    <select class="modal-input" id="msg-event-tag" style="cursor:pointer">
+      <option value="일정">📅 일정</option>
+      <option value="지시사항">📋 지시사항</option>
+      <option value="공지사항">📢 공지사항</option>
+      <option value="품질관리">🧪 품질관리</option>
+      <option value="안전관리">⚠️ 안전관리</option>
+      <option value="자재발주">🧱 자재발주</option>
+      <option value="하자보수">🔧 하자보수</option>
+      <option value="시공기준">📐 시공기준</option>
+      <option value="기타">📌 기타</option>
+    </select>
+    <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">내용</label>
+    <textarea class="modal-input" id="msg-event-content" placeholder="내용" style="min-height:70px;resize:vertical;margin-bottom:4px"></textarea>
+    <input class="modal-input" id="msg-event-room" placeholder="채팅방" style="margin-bottom:12px" readonly />
+    <div class="modal-actions">
+      <button class="btn-ghost" style="flex:1" onclick="closeMsgEventModal()">취소</button>
+      <button class="btn-ghost" style="flex:1;color:#dc2626;border-color:#fecaca" onclick="deleteMsgEvent()">삭제</button>
+      <button class="btn-primary" style="flex:2" onclick="saveMsgEvent()">저장</button>
     </div>
   </div>
 </div>
@@ -735,8 +766,8 @@ function calendarCard() {
           return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${hasCustom?'has-custom':''}" onclick="handleDayClick('${dk}')">
             <div class="cal-date">${date.getDate()}</div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
-            ${dayEvents.slice(0,1).map(e=>`<span class="cal-event ${evClass(e.tag)}">${shortTag(e.tag)}</span>`).join('')}
-            ${dayCustom.slice(0,2).map(e=>`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.memo||''}">${e.title.length>6?e.title.slice(0,6)+'…':e.title}</span>`).join('')}
+            ${dayEvents.slice(0,2).map(e=>`<span class="cal-event ${evClass(e.tag)}">${shortTag(e.tag)}</span>`).join('')}
+            ${dayCustom.slice(0,1).map(e=>`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.memo||''}">${e.title.length>6?e.title.slice(0,6)+'…':e.title}</span>`).join('')}
           </div>`;
         }).join('')}
       </div>
@@ -746,8 +777,8 @@ function calendarCard() {
           <button class="btn-primary" style="font-size:11px;padding:5px 10px" onclick="openEventModal('${todayKey()}')">+ 일정 추가</button>
         </div>
         ${[...getScheduleEvents(), ...getUpcomingCustomEvents()].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6).map(e=>`
-          <div class="mini-schedule" ${e.isCustom?`onclick="openEditEventModal('${e.id}')" style="cursor:pointer;border-left-color:#3b82f6"`:''}>
-            <div class="mini-date" ${e.isCustom?'style="color:#3b82f6"':''}>${formatDate(e.date)} ${e.isCustom?'✏️':''}</div>
+          <div class="mini-schedule" style="cursor:pointer;${e.isCustom?'border-left-color:#3b82f6':''}" onclick="${e.isCustom?`openEditEventModal('${e.id}')` : `openEditMsgEvent('${e.id}')`}">
+            <div class="mini-date" ${e.isCustom?'style="color:#3b82f6"':''}>${formatDate(e.date)} ${e.isCustom?'✏️':'📋'}</div>
             <div class="mini-text">${e.title}</div>
             <div class="meta">${e.isCustom?(e.tag||'일정')+(e.memo?` · ${e.memo.slice(0,20)}`:''):e.roomName+' · '+e.tag}</div>
           </div>`).join('')||'<div class="empty-box">다가오는 일정이 없습니다.</div>'}
@@ -1220,6 +1251,54 @@ function deleteCustomEvent() {
   customEvents = customEvents.filter(e=>e.id!==editingEventId);
   save();
   closeEventModal();
+  showToast('🗑️ 일정이 삭제됐어요');
+  const el = document.getElementById('main-content');
+  if(currentView==='calendar') renderCalendarView(el);
+  else if(currentView==='dashboard') renderDashboard(el);
+}
+
+// 메시지 일정 수정
+let editingMsgId = null;
+function openEditMsgEvent(id) {
+  const m = messages.find(m=>m.id===id);
+  if(!m) return;
+  editingMsgId = id;
+  document.getElementById('msg-event-summary').value = m.summary||'';
+  document.getElementById('msg-event-date').value = m.messageDate||'';
+  document.getElementById('msg-event-tag').value = normalizeTag(m.tag)||'일정';
+  document.getElementById('msg-event-content').value = m.content||'';
+  document.getElementById('msg-event-room').value = m.roomName||'';
+  document.getElementById('msg-event-modal').style.display = 'flex';
+}
+
+function closeMsgEventModal() {
+  document.getElementById('msg-event-modal').style.display = 'none';
+  editingMsgId = null;
+}
+
+function saveMsgEvent() {
+  if(!editingMsgId) return;
+  const summary = document.getElementById('msg-event-summary').value.trim();
+  const date = document.getElementById('msg-event-date').value;
+  const tag = document.getElementById('msg-event-tag').value;
+  const content = document.getElementById('msg-event-content').value.trim();
+  if(!summary) { showToast('제목을 입력해주세요'); return; }
+  messages = messages.map(m=>m.id===editingMsgId?{...m,summary,messageDate:date,tag,content}:m);
+  save();
+  closeMsgEventModal();
+  showToast('✅ 일정이 수정됐어요!');
+  const el = document.getElementById('main-content');
+  if(currentView==='calendar') renderCalendarView(el);
+  else if(currentView==='dashboard') renderDashboard(el);
+}
+
+function deleteMsgEvent() {
+  if(!editingMsgId) return;
+  if(!confirm('이 일정을 삭제할까요?')) return;
+  messages = messages.filter(m=>m.id!==editingMsgId);
+  todos = todos.filter(t=>t.messageId!==editingMsgId);
+  save();
+  closeMsgEventModal();
   showToast('🗑️ 일정이 삭제됐어요');
   const el = document.getElementById('main-content');
   if(currentView==='calendar') renderCalendarView(el);
