@@ -440,14 +440,16 @@ async function sbFetch(table, method='GET', body=null, query='') {
 
 async function loadFromSupabase() {
   try {
-    const [dbRooms, dbMsgs, dbTodos] = await Promise.all([
+    const [dbRooms, dbMsgs, dbTodos, dbCustomEvents] = await Promise.all([
       sbFetch('rooms', 'GET', null, '?order=sort_order'),
       sbFetch('messages', 'GET', null, '?order=created_at.desc'),
       sbFetch('todos', 'GET', null, '?order=created_at.desc'),
+      sbFetch('custom_events', 'GET', null, '?order=date'),
     ]);
     if (dbRooms) rooms = dbRooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sortOrder:r.sort_order}));
     if (dbMsgs) messages = dbMsgs.map(m=>({id:m.id,roomName:m.room_name,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,messageDate:m.message_date,createdAt:m.created_at,isTodo:m.is_todo}));
     if (dbTodos) todos = dbTodos.map(t=>({id:t.id,messageId:t.message_id,title:t.title,tag:t.tag,roomName:t.room_name,dueDate:t.due_date,done:t.done,doneAt:t.done_at}));
+    if (dbCustomEvents) customEvents = dbCustomEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag,memo:e.memo,createdAt:e.created_at}));
     console.log('✅ Supabase 로드 완료');
     return true;
   } catch(e) { console.error('Supabase 로드 실패:', e); return false; }
@@ -459,6 +461,7 @@ async function saveToSupabase() {
       rooms.length ? sbFetch('rooms', 'POST', rooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sort_order:r.sortOrder})), '') : null,
       messages.length ? sbFetch('messages', 'POST', messages.map(m=>({id:m.id,room_name:m.roomName,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,message_date:m.messageDate,created_at:m.createdAt,is_todo:m.isTodo})), '') : null,
       todos.length ? sbFetch('todos', 'POST', todos.map(t=>({id:t.id,message_id:t.messageId,title:t.title,tag:t.tag,room_name:t.roomName,due_date:t.dueDate,done:t.done,done_at:t.doneAt||null})), '') : null,
+      customEvents.length ? sbFetch('custom_events', 'POST', customEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag||'일정',memo:e.memo||'',created_at:e.createdAt||new Date().toISOString()})), '') : null,
     ]);
   } catch(e) { console.error('Supabase 저장 실패:', e); }
 }
@@ -1248,8 +1251,11 @@ function saveCustomEvent() {
 function deleteCustomEvent() {
   if(!editingEventId) return;
   if(!confirm('이 일정을 삭제할까요?')) return;
-  customEvents = customEvents.filter(e=>e.id!==editingEventId);
+  const delId = editingEventId;
+  customEvents = customEvents.filter(e=>e.id!==delId);
   save();
+  // Supabase에서도 삭제
+  sbFetch('custom_events', 'DELETE', null, `?id=eq.${delId}`).catch(e=>console.error(e));
   closeEventModal();
   showToast('🗑️ 일정이 삭제됐어요');
   const el = document.getElementById('main-content');
