@@ -257,6 +257,7 @@ a{color:inherit;text-decoration:none}
   .sidebar{position:fixed;left:-240px;z-index:200;transition:left 0.25s;height:100%;width:240px}
   .sidebar.open{left:0;box-shadow:4px 0 20px rgba(0,0,0,.3)}
   .main{width:100%}
+  #hamburger-btn{display:block!important}
   .dashboard-summary{grid-template-columns:1fr 1fr}
   .header{padding:0 12px;min-height:52px;flex-wrap:nowrap}
   .header-title{font-size:14px}
@@ -301,7 +302,8 @@ a{color:inherit;text-decoration:none}
   <main class="main">
     <header class="header">
       <div>
-        <div style="display:flex;align-items:center;gap:14px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button id="hamburger-btn" onclick="toggleSidebar()" style="display:none;border:none;background:none;font-size:20px;cursor:pointer;padding:4px;color:var(--primary);line-height:1">☰</button>
           <div class="header-title" id="header-title">대시보드</div>
           <div id="header-guide" style="font-size:12px;color:var(--muted);border-left:2px solid var(--border2);padding-left:12px;line-height:1.4;max-width:420px;display:none">
             오전 일과 후나 하루 일과가 끝난 뒤 카톡 대화를 붙여넣고<br>지시사항·공지사항·내일 할 일·이번 주 할 일을 분류해 둡니다.
@@ -319,6 +321,9 @@ a{color:inherit;text-decoration:none}
     <section class="content" id="main-content"></section>
   </main>
 </div>
+
+<!-- 모바일 사이드바 오버레이 -->
+<div id="sidebar-overlay" onclick="closeSidebar()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199"></div>
 
 <div class="modal-overlay" id="room-modal" style="display:none">
   <div class="modal">
@@ -605,6 +610,7 @@ function navItem(icon,label,view,count) {
 
 function setView(v) {
   currentView = v;
+  closeSidebar();
   if(v.startsWith('cat_')) { selectedCategory=v.replace('cat_',''); currentView='search'; }
   const titles = {dashboard:'대시보드',calendar:'캘린더',todo:'할일',search:'검색',input:'메시지 입력'};
   document.getElementById('header-title').textContent = titles[v]||(v.startsWith('cat_')?v.replace('cat_','')+'  검색':v);
@@ -623,6 +629,7 @@ function setView(v) {
 function openRoom(id) {
   const room = rooms.find(r=>r.id===id);
   if(!room) return;
+  closeSidebar();
   currentView = 'room_'+id;
   document.getElementById('header-title').textContent = room.name;
   renderSidebar();
@@ -1317,6 +1324,21 @@ function showToast(msg) {
 }
 
 document.getElementById('room-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmAddRoom();});
+
+// ===== 모바일 사이드바 =====
+function toggleSidebar() {
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  const isOpen = sidebar.classList.contains('open');
+  if(isOpen) { closeSidebar(); } else {
+    sidebar.classList.add('open');
+    overlay.style.display = 'block';
+  }
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').style.display = 'none';
+}
 
 // ===== 구글 로그인 =====
 const ALLOWED_EMAIL = 'nacbong@gmail.com';
