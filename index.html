@@ -1363,34 +1363,22 @@ function handleDayClick(dateStr) {
     ...dayCustom.map(e=>({type:'custom', id:e.id, tag:normalizeTag(e.tag||'일정'), title:e.title, sub:e.memo||'', data:e}))
   ];
 
-  // 저장된 순서 있으면 적용
-  const orderKey = 'hj3_dayorder_'+dateStr;
-  const savedOrder = JSON.parse(localStorage.getItem(orderKey)||'[]');
-  if(savedOrder.length) {
-    allItems.sort((a,b)=>{
-      const ai = savedOrder.indexOf(a.id);
-      const bi = savedOrder.indexOf(b.id);
-      return (ai===-1?999:ai)-(bi===-1?999:bi);
-    });
-  }
-
   allItems.forEach((item,i)=>{
     const tag = item.tag;
-    html+=`<div class="item" style="margin-bottom:8px;border-left:3px solid ${item.type==='custom'?'#3b82f6':'var(--border2)'};display:flex;align-items:flex-start;gap:8px">
-      <div style="display:flex;flex-direction:column;gap:2px;padding-top:2px">
-        <button onclick="moveDay('${dateStr}',${i},-1)" style="border:1px solid var(--border2);background:#fff;border-radius:4px;width:20px;height:18px;font-size:10px;cursor:pointer;line-height:1">▲</button>
-        <button onclick="moveDay('${dateStr}',${i},1)" style="border:1px solid var(--border2);background:#fff;border-radius:4px;width:20px;height:18px;font-size:10px;cursor:pointer;line-height:1">▼</button>
-      </div>
-      <div style="flex:1;cursor:pointer" onclick="${item.type==='custom'?`closeDayModal();openEditEventModal('${item.id}')`:`closeDayModal();openEditMsgEvent('${item.id}')`}">
+    html+=`<div class="day-drag-item" draggable="true" data-idx="${i}" data-id="${item.id}" data-date="${dateStr}"
+      ondragstart="onDayDragStart(event,${i})"
+      ondragover="onDayDragOver(event,${i},'${dateStr}')"
+      ondrop="onDayDrop(event,${i},'${dateStr}')"
+      ondragend="onDayDragEnd(event,'${dateStr}')"
+      style="margin-bottom:8px;border:1px solid var(--border);border-left:3px solid ${item.type==='custom'?'#3b82f6':'var(--border2)'};border-radius:8px;padding:12px;background:var(--surface);display:flex;align-items:flex-start;gap:8px;cursor:grab;transition:opacity 0.15s">
+      <span style="font-size:14px;color:var(--soft);margin-top:2px">⠿</span>
+      <div style="flex:1;cursor:pointer" onclick="closeDayModal();${item.type==='custom'?`openEditEventModal('${item.id}')`:`openEditMsgEvent('${item.id}')`}">
         <span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag} ✏️</span>
-        <div class="item-title" style="font-size:13px">${item.title}</div>
+        <div class="item-title" style="font-size:13px;margin-top:4px">${item.title}</div>
         ${item.sub?`<div class="meta">${item.sub}</div>`:''}
       </div>
     </div>`;
   });
-
-  // 현재 순서 저장
-  localStorage.setItem(orderKey, JSON.stringify(allItems.map(i=>i.id)));
   document.getElementById('day-modal-list').innerHTML = html;
   document.getElementById('day-modal-date').value = dateStr;
   document.getElementById('day-modal').style.display = 'flex';
@@ -1401,26 +1389,60 @@ function closeDayModal() {
 }
 
 let dragEventId = null;
-function dropEvent(targetId, dateStr) {
-  if(!dragEventId || dragEventId===targetId) return;
-  dragEventId = null;
+let dragFromIdx = null;
+
+function onDayDragStart(e, idx) {
+  dragFromIdx = idx;
+  e.target.style.opacity = '0.4';
 }
 
-function moveDay(dateStr, idx, dir) {
-  const orderKey = 'hj3_dayorder_'+dateStr;
-  const dayMsgs = messages.filter(m=>m.messageDate===dateStr&&normalizeTag(m.tag)==='일정');
-  const dayCustom = customEvents.filter(e=>e.date===dateStr);
-  const allItems = [
-    ...dayMsgs.map(m=>m.id),
-    ...dayCustom.map(e=>e.id)
-  ];
-  const savedOrder = JSON.parse(localStorage.getItem(orderKey)||'[]');
-  let order = savedOrder.length ? savedOrder : allItems;
+function onDayDragOver(e, idx, dateStr) {
+  e.preventDefault();
+  if(dragFromIdx === null || dragFromIdx === idx) return;
+  // 시각적 피드백
+  document.querySelectorAll('.day-drag-item').forEach((el,i)=>{
+    el.style.borderTop = i===idx ? '2px solid #3b82f6' : '';
+  });
+}
 
-  const newIdx = idx + dir;
-  if(newIdx < 0 || newIdx >= order.length) return;
-  [order[idx], order[newIdx]] = [order[newIdx], order[idx]];
-  localStorage.setItem(orderKey, JSON.stringify(order));
+function onDayDragEnd(e, dateStr) {
+  e.target.style.opacity = '1';
+  document.querySelectorAll('.day-drag-item').forEach(el=>{
+    el.style.borderTop = '';
+    el.style.opacity = '1';
+  });
+  // drop이 처리됨
+}
+
+function onDayDrop(e, toIdx, dateStr) {
+  e.preventDefault();
+  if(dragFromIdx===null || dragFromIdx===toIdx) { dragFromIdx=null; return; }
+
+  // 해당 날짜 모든 아이템 수집
+  const dayMsgs = messages.filter(m=>m.messageDate===dateStr&&normalizeTag(m.tag)==='일정');
+  const dayCustom = customEvents.filter(ev=>ev.date===dateStr);
+  let allIds = [
+    ...dayMsgs.map(m=>({type:'msg',id:m.id})),
+    ...dayCustom.map(ev=>({type:'custom',id:ev.id}))
+  ];
+
+  // 순서 변경
+  const moved = allIds.splice(dragFromIdx,1)[0];
+  allIds.splice(toIdx,0,moved);
+  dragFromIdx = null;
+
+  // customEvents 순서 반영
+  const customOrder = allIds.filter(i=>i.type==='custom').map(i=>i.id);
+  customEvents.sort((a,b)=>{
+    const ai = customOrder.indexOf(a.id);
+    const bi = customOrder.indexOf(b.id);
+    if(ai===-1&&bi===-1) return 0;
+    if(ai===-1) return 1;
+    if(bi===-1) return -1;
+    return ai-bi;
+  });
+
+  save();
   handleDayClick(dateStr);
 }
 
