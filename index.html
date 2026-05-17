@@ -157,8 +157,8 @@ a{color:inherit;text-decoration:none}
 .cal-cell{min-height:82px;padding:6px;border-right:1px solid var(--border);border-top:1px solid var(--border);background:var(--card);cursor:pointer;transition:background 0.1s;overflow:hidden}
 .cal-cell:hover{background:var(--bg)}
 .cal-cell:nth-child(7n){border-right:none}
-.cal-date{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:50%}
-.cal-cell.today .cal-date{background:var(--primary);color:#fff;font-weight:900}
+.cal-date{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;min-height:24px;display:flex;align-items:center;gap:2px;white-space:nowrap}
+.cal-cell.today .cal-date span:first-child{background:var(--primary);color:#fff;font-weight:900;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .cal-cell.sunday{background:#fff8f8}
 .cal-cell.sunday .cal-date{color:#ef4444}
 .cal-cell.holiday{background:#fff8f8}
@@ -788,9 +788,7 @@ function calendarCard() {
           const isWorkSat = dayCustom.some(e=>/^근무/.test(e.title.trim())) && date.getDay()===6;
           return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" onclick="handleDayClick('${dk}')">
             <div class="cal-date" style="${isOffDay?'color:#ef4444':''}">
-              ${date.getDate()}
-              ${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:2px">휴무</span>':''}
-              ${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:2px">근무</span>':''}
+              <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:2px;vertical-align:middle">휴무</span>':''}${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:2px;vertical-align:middle">근무</span>':''}
             </div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
             ${dayEvents.slice(0,2).map(e=>`<span class="cal-event ${evClass(e.tag)}" title="${e.title}">${shortTag(e.tag)}</span>`).join('')}
@@ -1270,7 +1268,7 @@ function getUpcomingCustomEvents() {
 
 // 날짜 클릭 → 일정 있으면 목록, 없으면 추가 모달
 function handleDayClick(dateStr) {
-  const dayMsgs = messages.filter(m=>m.messageDate===dateStr);
+  const dayMsgs = messages.filter(m=>m.messageDate===dateStr&&normalizeTag(m.tag)==='일정');
   const dayCustom = customEvents.filter(e=>e.date===dateStr);
   if(dayMsgs.length===0 && dayCustom.length===0) {
     openEventModal(dateStr);
@@ -1284,8 +1282,8 @@ function handleDayClick(dateStr) {
   let html = '';
   dayMsgs.forEach(m=>{
     const tag=normalizeTag(m.tag);
-    html+=`<div class="item" style="margin-bottom:8px">
-      <span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag}</span>
+    html+=`<div class="item" style="margin-bottom:8px;cursor:pointer;border-left:3px solid var(--border2)" onclick="closeDayModal();openEditMsgEvent('${m.id}')">
+      <span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag} ✏️</span>
       <div class="item-title" style="font-size:13px">${m.summary}</div>
       <div class="meta">${m.roomName}${m.sender?' · '+m.sender:''}</div>
     </div>`;
