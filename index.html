@@ -782,7 +782,7 @@ function calendarCard() {
           return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${hasCustom?'has-custom':''}" onclick="handleDayClick('${dk}')">
             <div class="cal-date">${date.getDate()}</div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
-            ${dayEvents.slice(0,2).map(e=>`<span class="cal-event ${evClass(e.tag)}" title="${e.title}">${e.title}</span>`).join('')}
+            ${dayEvents.slice(0,2).map(e=>`<span class="cal-event ${evClass(e.tag)}" title="${e.title}">${shortTag(e.tag)}</span>`).join('')}
             ${dayCustom.slice(0,1).map(e=>`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
           </div>`;
         }).join('')}
