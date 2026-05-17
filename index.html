@@ -301,7 +301,6 @@ a{color:inherit;text-decoration:none}
             오전 일과 후나 하루 일과가 끝난 뒤 카톡 대화를 붙여넣고<br>지시사항·공지사항·내일 할 일·이번 주 할 일을 분류해 둡니다.
           </div>
         </div>
-
       </div>
       <div class="header-actions">
         <div id="header-sub" style="font-size:11px;color:var(--soft);padding-right:8px;border-right:1px solid var(--border2);">현재 localStorage 저장 모드</div>
@@ -363,7 +362,6 @@ async function sbFetch(table, method='GET', body=null, query='') {
   return res.json();
 }
 
-// Supabase에서 데이터 로드
 async function loadFromSupabase() {
   try {
     const [dbRooms, dbMsgs, dbTodos] = await Promise.all([
@@ -379,10 +377,8 @@ async function loadFromSupabase() {
   } catch(e) { console.error('Supabase 로드 실패:', e); return false; }
 }
 
-// Supabase에 저장
 async function saveToSupabase() {
   try {
-    // 전체 upsert
     await Promise.all([
       rooms.length ? sbFetch('rooms', 'POST', rooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sort_order:r.sortOrder})), '') : null,
       messages.length ? sbFetch('messages', 'POST', messages.map(m=>({id:m.id,room_name:m.roomName,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,message_date:m.messageDate,created_at:m.createdAt,is_todo:m.isTodo})), '') : null,
@@ -438,9 +434,9 @@ function todayKey() { return dateKey(new Date()); }
 function addDaysKey(n) { const d = new Date(); d.setDate(d.getDate()+n); return dateKey(d); }
 function dateKey(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function isSameDay(a,b) { return a.getFullYear()===b.getFullYear()&&a.getMonth()===b.getMonth()&&a.getDate()===b.getDate(); }
-function formatDate(v) { 
-  if(!v) return ''; 
-  const d=new Date(v); 
+function formatDate(v) {
+  if(!v) return '';
+  const d=new Date(v);
   if(isNaN(d)) return v;
   const days=['일','월','화','수','목','금','토'];
   return `${d.getMonth()+1}/${d.getDate()} ${days[d.getDay()]}`;
@@ -464,7 +460,6 @@ function save() {
   localStorage.setItem('hj3_starred', JSON.stringify(starredRooms));
   updateStats();
   renderSidebar();
-  // Supabase에 비동기 저장
   saveToSupabase().catch(e => console.error(e));
 }
 
@@ -581,7 +576,6 @@ function confirmAddRoom() {
 // ===== 대시보드 =====
 function renderDashboard(el) {
   const today = new Date();
-  const todayMsgs = messages.filter(m=>isSameDay(new Date(m.createdAt),today));
   const missedInstr = messages.filter(m=>normalizeTag(m.tag)==='지시사항'&&isSameDay(new Date(m.createdAt),today));
   const notices = messages.filter(m=>normalizeTag(m.tag)==='공지사항'&&isSameDay(new Date(m.createdAt),today));
   const calEvents = getCalendarEvents();
@@ -592,7 +586,6 @@ function renderDashboard(el) {
   el.innerHTML = `
     <div class="dashboard-layout">
       <div class="dashboard-left">
-
         <div class="dashboard-summary">
           <div class="summary-card missed" onclick="setView('cat_지시사항')"><div class="summary-card-icon">📋</div><div class="card-label">오늘 놓친 지시사항</div><div class="card-num">${missedInstr.length}</div><div class="card-hint">확인 또는 후속 조치 필요</div></div>
           <div class="summary-card calendar" onclick="setView('calendar')"><div class="summary-card-icon">📅</div><div class="card-label">캘린더 일정</div><div class="card-num">${calEvents.length}</div><div class="card-hint">내일·이번 주 일정 포함</div></div>
@@ -633,10 +626,8 @@ function renderDashboard(el) {
             <div class="chip-row">
               ${CATEGORIES.map(c=>`<button class="chip" onclick="selectedCategory='${c.tag}';setView('search')">${c.tag}</button>`).join('')}
             </div>
-            <div id="quick-search-result"><div class="empty-box">검색 가능한 메시지가 아직 없습니다.</div></div>
           </div>
         </div>
-
       </div>
       <aside class="dashboard-right">${calendarCard()}</aside>
     </div>`;
@@ -761,12 +752,13 @@ function toggleCheck(id, checked) {
 
 function completeChecked() {
   if(checkedTodos.size===0){showToast('완료할 항목을 선택해주세요');return;}
-  if(!confirm(`선택한 ${checkedTodos.size}건을 완료처리할까요?`)) return;
+  const count = checkedTodos.size;
+  if(!confirm(`선택한 ${count}건을 완료처리할까요?`)) return;
   todos=todos.map(t=>checkedTodos.has(t.id)?{...t,done:true,doneAt:new Date().toISOString()}:t);
   checkedTodos.clear();
   save();
   renderTodoView(document.getElementById('main-content'));
-  showToast(`✅ ${checkedTodos.size||'선택한 항목'} 완료처리 완료!`);
+  showToast(`✅ ${count}건 완료처리 완료!`);
 }
 
 // ===== 검색 =====
@@ -1067,28 +1059,16 @@ function showToast(msg) {
 document.getElementById('room-name-input').addEventListener('keydown',e=>{if(e.key==='Enter')confirmAddRoom();});
 
 // ===== 구글 로그인 =====
-const ALLOWED_EMAIL = 'nacbong@gmail.com'; // 허용할 이메일
+const ALLOWED_EMAIL = 'nacbong@gmail.com';
 
-async function loginWithGoogle() {
-  try {
-    const res = await fetch(`${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.href)}`, {
-      method: 'GET',
-      headers: { 'apikey': SUPABASE_KEY },
-    });
-    // 구글 OAuth 리디렉트
-    const data = await res.json();
-    if(data.url) window.location.href = data.url;
-    else {
-      // 직접 URL 생성
-      window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin + window.location.pathname)}`;
-    }
-  } catch(e) {
-    window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(window.location.origin + window.location.pathname)}`;
-  }
+// ✅ 수정된 함수 - 직접 URL 리디렉트
+function loginWithGoogle() {
+  const redirectTo = window.location.origin + window.location.pathname;
+  window.location.href = `${SUPABASE_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectTo)}`;
 }
 
 async function checkAuth() {
-  // URL에서 access_token 확인 (OAuth 콜백)
+  // URL 해시에서 access_token 확인 (OAuth 콜백)
   const hash = window.location.hash;
   if(hash.includes('access_token')) {
     const params = new URLSearchParams(hash.substring(1));
@@ -1102,7 +1082,6 @@ async function checkAuth() {
   const token = sessionStorage.getItem('hj_token');
   if(!token) return false;
 
-  // 토큰으로 유저 정보 확인
   try {
     const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
@@ -1112,16 +1091,16 @@ async function checkAuth() {
     if(user.email === ALLOWED_EMAIL) {
       return true;
     } else {
-      alert(`접근 권한이 없습니다.
-(${user.email})`);
+      alert(`접근 권한이 없습니다.\n(${user.email})`);
       sessionStorage.removeItem('hj_token');
       return false;
     }
   } catch(e) { return false; }
 }
 
-// ===== 초기화 - Supabase에서 데이터 로드
+// ===== 초기화 =====
 document.getElementById('header-sub').textContent = '☁️ Supabase 연결 중...';
+
 function initApp() {
   loadFromSupabase().then(ok => {
     if (ok) {
