@@ -292,7 +292,8 @@ a{color:inherit;text-decoration:none}
   <aside class="sidebar">
     <div class="logo" onclick="setView('dashboard')">
       <div class="logo-title">현장톡</div>
-      <div class="logo-sub" id="logo-sub">건설현장 메시지 관리</div>
+      <div class="logo-sub">건설현장 메시지 관리</div>
+      <div id="logo-sub2" style="font-size:11px;color:rgba(255,255,255,.6);margin-top:3px"></div>
     </div>
     <nav class="nav" id="sidebar-nav"></nav>
     <div class="room-tools">
@@ -1195,10 +1196,10 @@ function renderSettingsView(el) {
         <div class="panel-head"><div class="panel-title">🏗️ 현장 / 프로필 정보</div></div>
         <div class="input-grid" style="margin-bottom:0">
           <label class="field-label">현장명
-            <input class="field-control" id="set-site" placeholder="예: 서원 골조방 현장" value="${appSettings.siteName||''}">
+            <input class="field-control" id="set-site" placeholder="현장명" value="${appSettings.siteName||''}">
           </label>
           <label class="field-label">담당자 이름
-            <input class="field-control" id="set-user" placeholder="예: 홍길동" value="${appSettings.userName||''}">
+            <input class="field-control" id="set-user" placeholder="이름" value="${appSettings.userName||''}">
           </label>
         </div>
         <button class="btn-primary" style="margin-top:12px" onclick="saveProfileSettings()">저장</button>
@@ -1579,9 +1580,11 @@ async function autoRefreshToken() {
 document.getElementById('header-sub').textContent = '☁️ Supabase 연결 중...';
 
 function updateLogoSub() {
-  const el = document.getElementById('logo-sub');
+  const el = document.getElementById('logo-sub2');
   if(!el) return;
-  el.textContent = (appSettings.siteName||'건설현장 메시지 관리') + (appSettings.userName?' · '+appSettings.userName:'');
+  const parts = [appSettings.siteName, appSettings.userName].filter(Boolean);
+  el.textContent = parts.join(' · ');
+  el.style.display = parts.length ? 'block' : 'none';
 }
 
 function initApp() {
