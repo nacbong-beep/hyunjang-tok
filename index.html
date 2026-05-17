@@ -1368,10 +1368,10 @@ function handleDayClick(dateStr) {
   dayCustom.forEach(e=>{
     const tag=normalizeTag(e.tag||'일정');
     html+=`<div class="item" draggable="true" data-id="${e.id}"
-      ondragstart="dragEvent(event,'${e.id}')"
-      ondragover="event.preventDefault();this.style.opacity='0.5'"
-      ondragleave="this.style.opacity='1'"
-      ondrop="dropEvent(event,'${e.id}','${dateStr}')"
+      ondragstart="dragEventId='${e.id}'"
+      ondragover="event.preventDefault();this.style.background='#f0f9ff'"
+      ondragleave="this.style.background=''"
+      ondrop="event.preventDefault();this.style.background='';dropEvent('${e.id}','${dateStr}')"
       style="margin-bottom:8px;cursor:grab;border-left:3px solid #3b82f6;display:flex;align-items:flex-start;gap:8px">
       <span style="font-size:16px;color:var(--soft);margin-top:2px;cursor:grab">⠿</span>
       <div style="flex:1" onclick="closeDayModal();openEditEventModal('${e.id}')">
@@ -1390,20 +1390,16 @@ function closeDayModal() {
   document.getElementById('day-modal').style.display = 'none';
 }
 
-// 일정 드래그 순서 변경
 let dragEventId = null;
-function dragEvent(e, id) { dragEventId = id; }
-function dropEvent(e, targetId, dateStr) {
-  e.preventDefault();
-  document.querySelectorAll('#day-modal-list .item').forEach(el=>el.style.opacity='1');
-  if(dragEventId===targetId) return;
+function dropEvent(targetId, dateStr) {
+  if(!dragEventId || dragEventId===targetId) return;
   const fromIdx = customEvents.findIndex(e=>e.id===dragEventId);
   const toIdx = customEvents.findIndex(e=>e.id===targetId);
   if(fromIdx<0||toIdx<0) return;
   const moved = customEvents.splice(fromIdx,1)[0];
   customEvents.splice(toIdx,0,moved);
+  dragEventId = null;
   save();
-  // 모달 새로고침
   handleDayClick(dateStr);
 }
 
