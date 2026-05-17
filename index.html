@@ -785,19 +785,17 @@ function calendarCard() {
           const isSun=i%7===0;
           const holiday=getHoliday(y,mo,date.getDate());
           const hasCustom=dayCustom.length>0;
-          const hasAny = dayEvents.length>0 || dayCustom.length>0;
-          const isOffDay = offDays.includes(dk);
-          const isWorkSat = workSaturdays.includes(dk) && date.getDay()===6;
-          const isSat = date.getDay()===6;
-          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom?'has-custom':''}" onclick="handleDayClick('${dk}')">
-            <div class="cal-date" style="${isOffDay?'color:#ef4444':isSat&&!isWorkSat?'color:#94a3b8':''}">
+          const isOffDay = dayCustom.some(e=>/^휴무/.test(e.title.trim()));
+          const isWorkSat = dayCustom.some(e=>/^근무/.test(e.title.trim())) && date.getDay()===6;
+          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" onclick="handleDayClick('${dk}')">
+            <div class="cal-date" style="${isOffDay?'color:#ef4444':''}">
               ${date.getDate()}
-              ${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:1px">휴무</span>':''}
-              ${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:1px">근무</span>':''}
+              ${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:2px">휴무</span>':''}
+              ${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:2px">근무</span>':''}
             </div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
             ${dayEvents.slice(0,2).map(e=>`<span class="cal-event ${evClass(e.tag)}" title="${e.title}">${shortTag(e.tag)}</span>`).join('')}
-            ${dayCustom.slice(0,1).map(e=>`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
+            ${dayCustom.filter(e=>!/^(휴무|근무)/.test(e.title.trim())).slice(0,1).map(e=>`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
           </div>`;
         }).join('')}
       </div>
