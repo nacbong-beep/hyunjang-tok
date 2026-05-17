@@ -739,9 +739,8 @@ function renderDashboard(el) {
 
 // ===== 캘린더 =====
 function getCalendarEvents() {
-  const today = todayKey();
   return messages
-    .filter(m=>m.messageDate&&m.messageDate>=today)
+    .filter(m=>m.messageDate&&normalizeTag(m.tag)==='일정')
     .map(m=>({id:m.id,date:m.messageDate,title:m.summary,tag:normalizeTag(m.tag),roomName:m.roomName}))
     .sort((a,b)=>a.date.localeCompare(b.date));
 }
