@@ -1485,6 +1485,10 @@ function onDayDrop(e, toIdx, dateStr) {
 
   save();
   handleDayClick(dateStr);
+  // 캘린더 셀도 즉시 갱신
+  const el = document.getElementById('main-content');
+  if(currentView==='calendar') renderCalendarView(el);
+  else if(currentView==='dashboard') renderDashboard(el);
 }
 
 function addFromDayModal() {
