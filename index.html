@@ -729,9 +729,27 @@ function renderDashboard(el) {
     <div class="dashboard-layout">
       <div class="dashboard-left">
         <div class="dashboard-summary">${cards}</div>
+        <div class="dashboard-grid-2">
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">오늘 공지사항</div><button class="panel-link" onclick="setView('cat_공지사항')">공지사항 전체 →</button></div>
+            ${notices.length?notices.slice(0,3).map(m=>msgItem(m)).join(''):'<div class="empty-box">오늘 공지사항이 없습니다.</div>'}
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div class="panel-title">빠른 검색</div><button class="panel-link" onclick="setView('search')">검색 화면 →</button></div>
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+              <input id="quick-search-input" style="flex:1;border:1px solid var(--border2);border-radius:9px;padding:9px 10px;font-size:13px;background:#fff;color:var(--text)" placeholder="예: 외벽 줄눈, 방수, PIT, 석재, 감리" onkeydown="if(event.key==='Enter')doQuickSearch()">
+              <button class="btn-primary" onclick="doQuickSearch()">검색</button>
+            </div>
+            <div class="chip-row">
+              ${CATEGORIES.map(c=>`<button class="chip" onclick="selectedCategory='${c.tag}';setView('search')">${c.tag}</button>`).join('')}
+            </div>
+          </div>
+        </div>
         <div class="panel">
           <div class="panel-head"><div class="panel-title">오늘 놓쳤을 수 있는 지시사항</div><button class="panel-link" onclick="setView('cat_지시사항')">지시사항 전체 →</button></div>
-          ${missedInstr.length?missedInstr.slice(0,3).map(m=>msgItem(m,true)).join(''):'<div class="empty-box">오늘 놓친 지시사항이 없습니다.</div>'}
+          ${missedInstr.length
+            ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${missedInstr.slice(0,4).map(m=>msgItem(m,true)).join('')}</div>`
+            : '<div class="empty-box">오늘 놓친 지시사항이 없습니다.</div>'}
         </div>
         <div class="dashboard-grid-2">
           <div class="panel">
@@ -747,22 +765,6 @@ function renderDashboard(el) {
               <button class="panel-link" onclick="setView('todo')">할일 전체 →</button>
             </div>
             ${weekTodos.length?weekTodos.slice(0,3).map(t=>todoItem(t)).join(''):'<div class="empty-box">이번 주 해야 할 일이 없습니다.</div>'}
-          </div>
-        </div>
-        <div class="dashboard-grid-2">
-          <div class="panel">
-            <div class="panel-head"><div class="panel-title">오늘 공지사항</div><button class="panel-link" onclick="setView('cat_공지사항')">공지사항 전체 →</button></div>
-            ${notices.length?notices.slice(0,3).map(m=>msgItem(m)).join(''):'<div class="empty-box">오늘 공지사항이 없습니다.</div>'}
-          </div>
-          <div class="panel">
-            <div class="panel-head"><div class="panel-title">빠른 검색</div><button class="panel-link" onclick="setView('search')">검색 화면 →</button></div>
-            <div style="display:flex;gap:8px;margin-bottom:10px;">
-              <input id="quick-search-input" style="flex:1;border:1px solid var(--border2);border-radius:9px;padding:9px 10px;font-size:13px;background:#fff;color:var(--text)" placeholder="예: 외벽 줄눈, 방수, PIT, 석재, 감리" onkeydown="if(event.key==='Enter')doQuickSearch()">
-              <button class="btn-primary" onclick="doQuickSearch()">검색</button>
-            </div>
-            <div class="chip-row">
-              ${CATEGORIES.map(c=>`<button class="chip" onclick="selectedCategory='${c.tag}';setView('search')">${c.tag}</button>`).join('')}
-            </div>
           </div>
         </div>
       </div>
