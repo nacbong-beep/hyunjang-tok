@@ -1024,11 +1024,11 @@ function renderRoomView(el, viewId) {
   });
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
-  // 이 채팅방에서 입력된 날짜 수집
-  const inputDates = new Set(roomMsgs.map(m => {
-    const d = new Date(m.createdAt);
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }));
+  // 이 채팅방에서 입력된 날짜 수집 (messageDate 기준)
+  const inputDates = new Set(roomMsgs
+    .filter(m => m.messageDate)
+    .map(m => m.messageDate)
+  );
 
   function renderMiniCal(y, mo, isCenter) {
     const daysInMonth = new Date(y, mo+1, 0).getDate();
