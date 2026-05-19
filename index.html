@@ -1229,7 +1229,28 @@ function doQuickSearch() {
   setView('search');
 }
 
-// ===== AI 자동 분류 =====
+// ===== 카카오톡 공유 텍스트 처리 =====
+function handleSharedText() {
+  const params = new URLSearchParams(window.location.search);
+  const sharedText = params.get('shared_text') || params.get('text');
+  if(!sharedText) return;
+
+  // URL에서 파라미터 제거
+  window.history.replaceState({}, document.title, window.location.pathname);
+
+  // 메시지 입력 화면으로 이동 후 텍스트 삽입
+  setTimeout(() => {
+    setView('input');
+    setTimeout(() => {
+      const textarea = document.getElementById('input-text');
+      if(textarea) {
+        textarea.value = sharedText;
+        document.getElementById('input-count').textContent = `${sharedText.length}자 · 미리보기 0건`;
+        showToast('📨 카톡 대화가 붙여넣어졌어요! AI 자동 분류를 눌러주세요.');
+      }
+    }, 300);
+  }, 500);
+}
 async function aiClassify() {
   const text = document.getElementById('input-text').value.trim();
   const roomName = document.getElementById('input-room').value;
@@ -1782,6 +1803,8 @@ function initApp() {
     updateStats();
     renderSidebar();
     setView('dashboard');
+    // 카카오톡 공유 텍스트 처리
+    handleSharedText();
   });
 }
 
