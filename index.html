@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1024,9 +1024,9 @@ function renderRoomView(el, viewId) {
   });
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
-  // 이 채팅방에서 입력된 날짜 수집 (messageDate 기준)
+  // 이 채팅방에서 입력된 날짜 수집 (messageDate 기준, 오늘 이전만)
   const inputDates = new Set(roomMsgs
-    .filter(m => m.messageDate)
+    .filter(m => m.messageDate && m.messageDate <= todayKey())
     .map(m => m.messageDate)
   );
 
