@@ -1885,6 +1885,8 @@ function scrollToDate(dk) {
   const el = document.getElementById('date-group-' + dk);
   if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
 }
+
+function addFromDayModal() {
   const dateStr = document.getElementById('day-modal-date').value;
   closeDayModal();
   openEventModal(dateStr);
