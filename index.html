@@ -914,22 +914,22 @@ function renderInputView(el) {
         </div>
 
         <!-- 기존 가이드 (AI 아닐 때) -->
-        <div class="paste-guide" id="manual-guide" style="${inputMode==='ai'?'display:none':'';}">
+        <div class="paste-guide" id="manual-guide" style="${inputMode==='ai'?'display:none':''}">
           <strong id="guide-title">AI 분류표 예시</strong>
           <pre id="guide-example">| 태그 | 발신자 | 요약 | 할일 | 날짜 |
 | 지시사항 | 김부장 | 각 동 PIT 주변 정리 사진 공유 | ✅ | 내일 |
 | 일정 | 감리단 | 5/20 오전 10시 욕실 방수 확인 |  | 5/20 |</pre>
         </div>
 
-        <textarea class="paste-area" id="input-text" placeholder="${inputMode==='ai'?'카카오톡 대화를 그대로 붙여넣어 주세요.\n\n예)\n김부장: 내일 오전까지 각 동 PIT 주변 정리 사진 공유해주세요.\n관리팀: 5/22 오전 10시 욕실 방수 감리 확인 예정입니다.':'| 태그 | 발신자 | 요약 | 할일 | 날짜 | 형태의 표를 붙여넣어 주세요.'}"></textarea>
+        <textarea class="paste-area" id="input-text" placeholder="${inputMode==='ai'?'카카오톡 대화를 그대로 붙여넣어 주세요.':'| 태그 | 발신자 | 요약 | 할일 | 날짜 | 형태의 표를 붙여넣어 주세요.'}"></textarea>
 
         <div class="input-actions">
           <div class="input-count" id="input-count">0자 · 미리보기 0건</div>
           <div class="input-buttons">
             <button class="btn-ghost" onclick="clearInput()">지우기</button>
             ${inputMode==='ai'
-              ? `<button class="btn-ai" id="ai-classify-btn" onclick="classifyWithAI()">✨ AI로 자동분류</button>`
-              : `<button class="btn-primary" onclick="generatePreview()">미리보기 생성</button>`
+              ? '<button class="btn-ai" id="ai-classify-btn" onclick="classifyWithAI()">✨ AI로 자동분류</button>'
+              : '<button class="btn-primary" onclick="generatePreview()">미리보기 생성</button>'
             }
           </div>
         </div>
