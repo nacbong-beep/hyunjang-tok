@@ -1039,7 +1039,7 @@ function renderRoomView(el, viewId) {
       const isFuture = dk > todayKey();
       const isSun = (firstDay + d - 1) % 7 === 0;
       cells += `<div onclick="scrollToDate('${dk}')" style="
-        width:100%;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;
+        width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:1px auto;
         font-size:10px;font-weight:${isToday?'900':'600'};
         background:${hasInput?'#10b981':isToday?'var(--primary)':isFuture?'transparent':'#fee2e2'};
         color:${hasInput?'#fff':isToday?'#fff':isFuture?'var(--soft)':isSun?'#ef4444':'var(--muted)'};
