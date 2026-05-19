@@ -1010,12 +1010,15 @@ function renderRoomView(el, viewId) {
   if(!room) return;
   const roomMsgs = [...messages.filter(m=>m.roomName===room.name)].sort((a,b)=>new Date(a.messageDate||a.createdAt)-new Date(b.messageDate||b.createdAt));
 
-  // 입력 현황 미니 캘린더
+  // 입력 현황 3개월 캘린더
   const now = new Date();
-  const y = now.getFullYear();
-  const mo = now.getMonth();
-  const daysInMonth = new Date(y, mo+1, 0).getDate();
-  const firstDay = new Date(y, mo, 1).getDay();
+  const months = [-1, 0, 1].map(offset => {
+    let mo = now.getMonth() + offset;
+    let y = now.getFullYear();
+    if(mo < 0) { mo = 11; y--; }
+    if(mo > 11) { mo = 0; y++; }
+    return { y, mo };
+  });
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
 
   // 이 채팅방에서 입력된 날짜 수집
@@ -1024,22 +1027,33 @@ function renderRoomView(el, viewId) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }));
 
-  // 캘린더 셀 생성
-  let calCells = '';
-  for(let i=0; i<firstDay; i++) calCells += '<div></div>';
-  for(let d=1; d<=daysInMonth; d++) {
-    const dk = `${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday = dk === todayKey();
-    const hasInput = inputDates.has(dk);
-    const isFuture = dk > todayKey();
-    const isSun = (firstDay + d - 1) % 7 === 0;
-    calCells += `<div style="
-      width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-      font-size:11px;font-weight:${isToday?'900':'600'};
-      background:${hasInput?'#10b981':isToday?'var(--primary)':isFuture?'transparent':'#fee2e2'};
-      color:${hasInput?'#fff':isToday?'#fff':isFuture?'var(--soft)':isSun?'#ef4444':'var(--muted)'};
-      cursor:default;
-    " title="${dk}${hasInput?' ✅ 입력완료':isFuture?'':' ❌ 미입력'}">${d}</div>`;
+  function renderMiniCal(y, mo) {
+    const daysInMonth = new Date(y, mo+1, 0).getDate();
+    const firstDay = new Date(y, mo, 1).getDay();
+    let cells = '';
+    for(let i=0; i<firstDay; i++) cells += '<div></div>';
+    for(let d=1; d<=daysInMonth; d++) {
+      const dk = `${y}-${String(mo+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const isToday = dk === todayKey();
+      const hasInput = inputDates.has(dk);
+      const isFuture = dk > todayKey();
+      const isSun = (firstDay + d - 1) % 7 === 0;
+      cells += `<div onclick="scrollToDate('${dk}')" style="
+        width:100%;aspect-ratio:1;border-radius:50%;display:flex;align-items:center;justify-content:center;
+        font-size:10px;font-weight:${isToday?'900':'600'};
+        background:${hasInput?'#10b981':isToday?'var(--primary)':isFuture?'transparent':'#fee2e2'};
+        color:${hasInput?'#fff':isToday?'#fff':isFuture?'var(--soft)':isSun?'#ef4444':'var(--muted)'};
+        cursor:${hasInput?'pointer':'default'};
+      " title="${dk}${hasInput?' ✅ 입력완료':isFuture?'':' ❌ 미입력'}">${d}</div>`;
+    }
+    return `
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:800;color:var(--muted);text-align:center;margin-bottom:8px">${y}년 ${monthNames[mo]}</div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
+          ${['일','월','화','수','목','금','토'].map((d,i)=>`<div style="text-align:center;font-size:9px;font-weight:800;color:${i===0?'#ef4444':'var(--soft)'};padding-bottom:3px">${d}</div>`).join('')}
+          ${cells}
+        </div>
+      </div>`;
   }
 
   // 기간 필터 상태
@@ -1050,15 +1064,14 @@ function renderRoomView(el, viewId) {
     <!-- 입력 현황 캘린더 -->
     <div class="panel" style="margin-bottom:14px">
       <div class="panel-head">
-        <div class="panel-title">📅 ${y}년 ${monthNames[mo]} 입력 현황</div>
+        <div class="panel-title">📅 입력 현황</div>
         <div style="display:flex;gap:12px;font-size:11px;color:var(--muted)">
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:50%;background:#10b981;display:inline-block"></span>입력완료</span>
-          <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:12px;border-radius:50%;background:#fee2e2;display:inline-block"></span>미입력</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block"></span>입력완료</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#fee2e2;display:inline-block"></span>미입력</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(7,28px);gap:4px;justify-content:start">
-        ${['일','월','화','수','목','금','토'].map((d,i)=>`<div style="width:28px;text-align:center;font-size:10px;font-weight:800;color:${i===0?'#ef4444':'var(--soft)'}">${d}</div>`).join('')}
-        ${calCells}
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
+        ${months.map(({y, mo}) => renderMiniCal(y, mo)).join('')}
       </div>
     </div>
 
@@ -1104,7 +1117,7 @@ function renderRoomView(el, viewId) {
           const d = new Date(dk);
           const label = `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
           return `
-            <div style="margin-bottom:16px">
+            <div id="date-group-${dk}" style="margin-bottom:16px">
               <div style="font-size:12px;font-weight:800;color:var(--muted);padding:6px 0;border-bottom:2px solid var(--border);margin-bottom:10px;display:flex;align-items:center;gap:8px">
                 <span>📅 ${label}</span>
                 <span style="font-size:11px;font-weight:500;color:var(--soft)">${groups[dk].length}건</span>
@@ -1868,7 +1881,10 @@ function onDayDrop(e, toIdx, dateStr) {
   else if(currentView==='dashboard') renderDashboard(el);
 }
 
-function addFromDayModal() {
+function scrollToDate(dk) {
+  const el = document.getElementById('date-group-' + dk);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
   const dateStr = document.getElementById('day-modal-date').value;
   closeDayModal();
   openEventModal(dateStr);
