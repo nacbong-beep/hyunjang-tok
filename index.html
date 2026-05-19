@@ -313,7 +313,7 @@ a{color:inherit;text-decoration:none}
         <div style="display:flex;align-items:center;gap:10px;">
           <button id="hamburger-btn" onclick="toggleSidebar()" style="display:none;border:none;background:none;font-size:20px;cursor:pointer;padding:4px;color:var(--primary);line-height:1">☰</button>
           <div class="header-title" id="header-title">대시보드</div>
-          <div id="header-guide" style="font-size:12px;color:var(--muted);border-left:2px solid var(--border2);padding-left:12px;line-height:1.4;max-width:420px;display:none">
+          <div id="header-guide" style="font-size:12px;color:var(--muted);border-left:2px solid var(--border2);padding-left:12px;line-height:1.4;display:none;white-space:nowrap">
             하루 일과가 끝난 뒤 카톡 대화를 붙여넣고, 공지사항·지시사항·내일 할 일·이번 주 할 일을 AI로 자동 분류합니다.
           </div>
         </div>
@@ -915,7 +915,7 @@ function calendarCard() {
           const isOffDay = e.isCustom && /^휴무/.test((e.title||'').trim());
           const borderColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
           const dateColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
-          const icon = isOffDay ? '🔴' : e.isCustom ? '✏️' : '📋';
+          const icon = isOffDay ? '' : e.isCustom ? '✏️' : '📋';
           return `<div class="mini-schedule" style="cursor:pointer;border-left-color:${borderColor}" onclick="${e.isCustom?`openEditEventModal('${e.id}')` : `openEditMsgEvent('${e.id}')`}">
             <div class="mini-date" style="color:${dateColor}">${formatDate(e.date)} ${icon}</div>
             <div class="mini-text">${e.title}</div>
