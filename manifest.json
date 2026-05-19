@@ -21,12 +21,18 @@
       "purpose": "any maskable"
     }
   ],
-  "share_target": {
-    "action": "/hyunjang-tok/",
-    "method": "GET",
-    "params": {
-      "text": "shared_text",
-      "title": "shared_title"
-    }
+ "share_target": {
+  "action": "/hyunjang-tok/",
+  "method": "POST",
+  "enctype": "multipart/form-data",
+  "params": {
+    "title": "shared_title",
+    "text": "shared_text",
+    "files": [
+      {
+        "name": "shared_file",
+        "accept": ["text/plain", ".txt"]
+      }
+    ]
   }
 }
