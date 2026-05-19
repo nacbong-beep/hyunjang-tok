@@ -21,18 +21,19 @@
       "purpose": "any maskable"
     }
   ],
- "share_target": {
-  "action": "/hyunjang-tok/",
-  "method": "POST",
-  "enctype": "multipart/form-data",
-  "params": {
-    "title": "shared_title",
-    "text": "shared_text",
-    "files": [
-      {
-        "name": "shared_file",
-        "accept": ["text/plain", ".txt"]
-      }
-    ]
+  "share_target": {
+    "action": "/hyunjang-tok/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "shared_title",
+      "text": "shared_text",
+      "files": [
+        {
+          "name": "shared_file",
+          "accept": ["text/plain", ".txt"]
+        }
+      ]
+    }
   }
 }
