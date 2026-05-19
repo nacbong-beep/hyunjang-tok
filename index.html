@@ -1012,11 +1012,14 @@ function renderRoomView(el, viewId) {
 
   // 입력 현황 3개월 캘린더
   const now = new Date();
+  // 월 오프셋 (화살표로 이동)
+  const calOffsetKey = 'hj3_caloffset_' + id;
+  const calOffset = Number(localStorage.getItem(calOffsetKey) || '0');
   const months = [-1, 0, 1].map(offset => {
-    let mo = now.getMonth() + offset;
+    let mo = now.getMonth() + offset + calOffset;
     let y = now.getFullYear();
-    if(mo < 0) { mo = 11; y--; }
-    if(mo > 11) { mo = 0; y++; }
+    while(mo < 0) { mo += 12; y--; }
+    while(mo > 11) { mo -= 12; y++; }
     return { y, mo };
   });
   const monthNames = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
@@ -1027,7 +1030,7 @@ function renderRoomView(el, viewId) {
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }));
 
-  function renderMiniCal(y, mo) {
+  function renderMiniCal(y, mo, isCenter) {
     const daysInMonth = new Date(y, mo+1, 0).getDate();
     const firstDay = new Date(y, mo, 1).getDay();
     let cells = '';
@@ -1038,19 +1041,26 @@ function renderRoomView(el, viewId) {
       const hasInput = inputDates.has(dk);
       const isFuture = dk > todayKey();
       const isSun = (firstDay + d - 1) % 7 === 0;
-      cells += `<div onclick="scrollToDate('${dk}')" style="
-        width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:1px auto;
-        font-size:10px;font-weight:${isToday?'900':'600'};
+      cells += `<div onclick="${hasInput?`scrollToDate('${dk}')`:'void(0)'}" style="
+        width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:1px auto;
+        font-size:9px;font-weight:${isToday?'900':'600'};
         background:${hasInput?'#10b981':isToday?'var(--primary)':isFuture?'transparent':'#fee2e2'};
         color:${hasInput?'#fff':isToday?'#fff':isFuture?'var(--soft)':isSun?'#ef4444':'var(--muted)'};
         cursor:${hasInput?'pointer':'default'};
       " title="${dk}${hasInput?' ✅ 입력완료':isFuture?'':' ❌ 미입력'}">${d}</div>`;
     }
+    const header = isCenter
+      ? `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px">
+          <button onclick="localStorage.setItem('${calOffsetKey}', ${calOffset-1});renderRoomView(document.getElementById('main-content'),'${viewId}')" style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">‹</button>
+          <span style="font-size:11px;font-weight:800;color:var(--text)">${y}년 ${monthNames[mo]}</span>
+          <button onclick="localStorage.setItem('${calOffsetKey}', ${calOffset+1});renderRoomView(document.getElementById('main-content'),'${viewId}')" style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">›</button>
+        </div>`
+      : `<div style="font-size:10px;font-weight:700;color:var(--soft);text-align:center;margin-bottom:6px">${y}년 ${monthNames[mo]}</div>`;
     return `
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:800;color:var(--muted);text-align:center;margin-bottom:8px">${y}년 ${monthNames[mo]}</div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">
-          ${['일','월','화','수','목','금','토'].map((d,i)=>`<div style="text-align:center;font-size:9px;font-weight:800;color:${i===0?'#ef4444':'var(--soft)'};padding-bottom:3px">${d}</div>`).join('')}
+        ${header}
+        <div style="display:grid;grid-template-columns:repeat(7,20px);gap:1px;justify-content:center">
+          ${['일','월','화','수','목','금','토'].map((d,i)=>`<div style="width:20px;text-align:center;font-size:8px;font-weight:800;color:${i===0?'#ef4444':'var(--soft)'};padding-bottom:2px">${d}</div>`).join('')}
           ${cells}
         </div>
       </div>`;
@@ -1070,15 +1080,16 @@ function renderRoomView(el, viewId) {
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#fee2e2;display:inline-block"></span>미입력</span>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">
-        ${months.map(({y, mo}) => renderMiniCal(y, mo)).join('')}
+      <div style="display:flex;gap:24px;justify-content:center">
+        ${months.map(({y, mo}, i) => renderMiniCal(y, mo, i===1)).join('')}
       </div>
     </div>
 
     <!-- 태그 필터 + 기간 필터 -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
       <div class="chip-row" style="margin-bottom:0;flex:1">
-        ${CATEGORIES.map(c=>`<button class="chip" onclick="selectedCategory=selectedCategory==='${c.tag}'?null:'${c.tag}';renderRoomView(document.getElementById('main-content'),'${viewId}')">${c.icon} ${c.tag}</button>`).join('')}
+        <button class="chip ${!selectedCategory?'on':''}" onclick="selectedCategory=null;renderRoomView(document.getElementById('main-content'),'${viewId}')">전체</button>
+        ${CATEGORIES.map(c=>`<button class="chip ${selectedCategory===c.tag?'on':''}" onclick="selectedCategory=selectedCategory==='${c.tag}'?null:'${c.tag}';renderRoomView(document.getElementById('main-content'),'${viewId}')">${c.icon} ${c.tag}</button>`).join('')}
       </div>
       <select onchange="localStorage.setItem('${roomFilterKey}',this.value);renderRoomView(document.getElementById('main-content'),'${viewId}')"
         style="border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--card);color:var(--text);cursor:pointer">
@@ -1098,18 +1109,17 @@ function renderRoomView(el, viewId) {
         const cutoff = new Date();
         cutoff.setDate(cutoff.getDate() - Number(savedFilter));
         const filtered = roomMsgs.filter(m => {
-          const d = new Date(m.createdAt);
+          const d = new Date(m.messageDate || m.createdAt);
           return d >= cutoff && (!selectedCategory || normalizeTag(m.tag) === selectedCategory);
         });
         if(!filtered.length) return '<div class="empty-box">메시지가 없습니다.</div>';
 
-        // 날짜별 그룹핑
+        // messageDate 기준으로 날짜별 그룹핑
         const groups = {};
         filtered.forEach(m => {
-          const d = new Date(m.createdAt);
-          const dk = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-          if(!groups[dk]) groups[dk] = [];
-          groups[dk].push(m);
+          const dateStr = m.messageDate || m.createdAt.slice(0,10);
+          if(!groups[dateStr]) groups[dateStr] = [];
+          groups[dateStr].push(m);
         });
 
         const days = ['일','월','화','수','목','금','토'];
@@ -1122,7 +1132,7 @@ function renderRoomView(el, viewId) {
                 <span>📅 ${label}</span>
                 <span style="font-size:11px;font-weight:500;color:var(--soft)">${groups[dk].length}건</span>
               </div>
-              ${groups[dk].map(m=>msgItem(m)).join('')}
+              ${groups[dk].map(m=>msgItemClickable(m)).join('')}
             </div>`;
         }).join('');
       })()}
@@ -1319,6 +1329,15 @@ function extractDateKey(text) {
 }
 
 // ===== 컴포넌트 =====
+function msgItemClickable(m) {
+  const tag=normalizeTag(m.tag);
+  return `<div class="item" style="cursor:pointer" onclick="openEditMsgEvent('${m.id}')">
+    <div><span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag}</span></div>
+    <div class="item-title">${m.summary}</div>
+    <div class="meta">${[m.roomName,m.sender,formatDate(m.messageDate||m.createdAt)].filter(Boolean).join(' · ')}</div>
+  </div>`;
+}
+
 function msgItem(m,checked=false) {
   const tag=normalizeTag(m.tag);
   return `<div class="item">
