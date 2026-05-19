@@ -377,7 +377,7 @@ a{color:inherit;text-decoration:none}
         <button class="btn-primary" onclick="applyDateFilter(7)" style="padding:13px;font-size:14px;background:var(--primary2)">📅 최근 1주일</button>
         <div style="border:1px solid var(--border2);border-radius:9px;padding:12px;text-align:left">
           <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">📅 특정 날짜</div>
-          <input type="date" id="specific-date-input" class="field-control" style="width:100%;margin-bottom:8px" value="${new Date().toISOString().slice(0,10)}">
+          <input type="date" id="specific-date-input" class="field-control" style="width:100%;margin-bottom:8px">
           <button class="btn-primary" onclick="applySpecificDate()" style="width:100%;padding:9px;font-size:13px">이 날짜만 보기</button>
         </div>
         <div style="border:1px solid var(--border2);border-radius:9px;padding:12px;text-align:left">
@@ -1327,6 +1327,8 @@ function showDateFilterModal(sharedText) {
   document.getElementById('date-filter-step1').style.display = 'block';
   document.getElementById('date-filter-step2').style.display = 'none';
   document.getElementById('date-filter-newroom').style.display = 'none';
+  // 특정 날짜 기본값 오늘로 설정
+  document.getElementById('specific-date-input').value = todayKey();
 
   // 채팅방 목록 렌더링
   const activeRooms = rooms.filter(r=>!r.archived);
