@@ -896,7 +896,7 @@ function calendarCard() {
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
             ${allDayItems.slice(0,3).map(e=>
               e.type==='msg'
-                ? `<span class="cal-event ${evClass(e.tag)}" title="${e.title}">${shortTag(e.tag)}</span>`
+                ? `<span class="cal-event ev-purple" title="${e.title}">${shortTag(e.tag)}</span>`
                 : `<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`
             ).join('')}
           </div>`;
@@ -907,12 +907,17 @@ function calendarCard() {
           <div class="calendar-list-title" style="margin-bottom:0">다가오는 일정</div>
           <button class="btn-primary" style="font-size:11px;padding:5px 10px" onclick="openEventModal('${todayKey()}')">+ 일정 추가</button>
         </div>
-        ${[...getScheduleEvents(), ...getUpcomingCustomEvents()].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6).map(e=>`
-          <div class="mini-schedule" style="cursor:pointer;${e.isCustom?'border-left-color:#3b82f6':''}" onclick="${e.isCustom?`openEditEventModal('${e.id}')` : `openEditMsgEvent('${e.id}')`}">
-            <div class="mini-date" ${e.isCustom?'style="color:#3b82f6"':''}>${formatDate(e.date)} ${e.isCustom?'✏️':'📋'}</div>
+        ${[...getScheduleEvents(), ...getUpcomingCustomEvents()].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6).map(e=>{
+          const isOffDay = e.isCustom && /^휴무/.test((e.title||'').trim());
+          const borderColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
+          const dateColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
+          const icon = isOffDay ? '🔴' : e.isCustom ? '✏️' : '📋';
+          return `<div class="mini-schedule" style="cursor:pointer;border-left-color:${borderColor}" onclick="${e.isCustom?`openEditEventModal('${e.id}')` : `openEditMsgEvent('${e.id}')`}">
+            <div class="mini-date" style="color:${dateColor}">${formatDate(e.date)} ${icon}</div>
             <div class="mini-text">${e.title}</div>
             <div class="meta">${e.isCustom?(e.tag||'일정')+(e.memo?` · ${e.memo.slice(0,20)}`:''):e.roomName+' · '+e.tag}</div>
-          </div>`).join('')||'<div class="empty-box">다가오는 일정이 없습니다.</div>'}
+          </div>`;
+        }).join('')||'<div class="empty-box">다가오는 일정이 없습니다.</div>'}
       </div>
     </div>`;
 }
@@ -1283,16 +1288,8 @@ function doQuickSearch() {
   setView('search');
 }
 
-// ===== Service Worker 등록 =====
-if('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/hyunjang-tok/sw.js')
-    .then(reg => console.log('SW 등록 완료:', reg.scope))
-    .catch(err => console.log('SW 등록 실패:', err));
-}
-
 // ===== 카카오톡 공유 텍스트 처리 =====
 async function handleSharedText() {
-  // URL 파라미터로 텍스트 공유
   const params = new URLSearchParams(window.location.search);
   const sharedText = params.get('shared_text') || params.get('text');
   if(sharedText) {
@@ -1301,24 +1298,7 @@ async function handleSharedText() {
       setView('input');
       setTimeout(() => showDateFilterModal(sharedText), 300);
     }, 500);
-    return;
   }
-
-  // 파일 공유 처리 (Service Worker가 캐시에 저장한 텍스트)
-  try {
-    const cache = await caches.open('shared-files');
-    const response = await cache.match('shared-text');
-    if(response) {
-      const text = await response.text();
-      await cache.delete('shared-text');
-      if(text) {
-        setTimeout(() => {
-          setView('input');
-          setTimeout(() => showDateFilterModal(text), 300);
-        }, 500);
-      }
-    }
-  } catch(e) { console.log('파일 공유 처리 실패:', e); }
 }
 
 function showDateFilterModal(sharedText) {
