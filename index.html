@@ -776,10 +776,10 @@ function renderDashboard(el) {
   const weekTodos = pending.filter(t=>t.dueDate&&t.dueDate!==addDaysKey(1)&&t.dueDate<=addDaysKey(7));
 
   const cardMap = {
-    missed: `<div class="summary-card missed" onclick="setView('cat_지시사항')"><div class="summary-card-icon">📋</div><div class="card-label">놓친 지시사항 (${missedDays===1?'오늘':'최근'+missedDays+'일'})</div><div class="card-num">${missedInstr.length}</div><div class="card-hint">확인 또는 후속 조치 필요</div></div>`,
+    missed: `<div class="summary-card missed" onclick="setView('cat_지시사항')"><div class="summary-card-icon">📋</div><div class="card-label">지시사항 (${missedDays===1?'오늘':'최근'+missedDays+'일'})</div><div class="card-num">${missedInstr.length}</div><div class="card-hint">확인 또는 후속 조치 필요</div></div>`,
     calendar: `<div class="summary-card calendar" onclick="setView('calendar')"><div class="summary-card-icon">📅</div><div class="card-label">캘린더 일정</div><div class="card-num">${calEvents.length}</div><div class="card-hint">내일·이번 주 일정 포함</div></div>`,
     todo: `<div class="summary-card todo" onclick="setView('todo')"><div class="summary-card-icon">✅</div><div class="card-label">할일</div><div class="card-num">${pending.length}</div><div class="card-hint">내일 ${tomorrowTodos.length}건 · 이번 주 ${weekTodos.length}건</div></div>`,
-    notice: `<div class="summary-card notice" onclick="setView('cat_공지사항')"><div class="summary-card-icon">📢</div><div class="card-label">오늘 공지사항</div><div class="card-num">${notices.length}</div><div class="card-hint">회의·전달사항 포함</div></div>`,
+    notice: `<div class="summary-card notice" onclick="setView('cat_공지사항')"><div class="summary-card-icon">📢</div><div class="card-label">공지사항</div><div class="card-num">${notices.length}</div><div class="card-hint">회의·전달사항 포함</div></div>`,
   };
   const cards = (appSettings.dashboardCards||['missed','calendar','todo','notice']).map(c=>cardMap[c]||'').join('');
 
@@ -789,7 +789,7 @@ function renderDashboard(el) {
         <div class="dashboard-summary">${cards}</div>
         <div class="dashboard-grid-2">
           <div class="panel">
-            <div class="panel-head"><div class="panel-title">공지사항</div><button class="panel-link" onclick="setView('cat_공지사항')">공지사항 전체 →</button></div>
+            <div class="panel-head"><div class="panel-title">공지사항</div><button class="panel-link" onclick="setView('cat_공지사항')">전체 →</button></div>
             ${notices.length?notices.slice(0,3).map(m=>msgItem(m)).join(''):'<div class="empty-box">오늘 공지사항이 없습니다.</div>'}
           </div>
           <div class="panel">
@@ -804,7 +804,7 @@ function renderDashboard(el) {
           </div>
         </div>
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">지시사항</div><button class="panel-link" onclick="setView('cat_지시사항')">지시사항 전체 →</button></div>
+          <div class="panel-head"><div class="panel-title">지시사항</div><button class="panel-link" onclick="setView('cat_지시사항')">전체 →</button></div>
           ${missedInstr.length
             ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${missedInstr.slice(0,4).map(m=>msgItem(m,true)).join('')}</div>`
             : '<div class="empty-box">오늘 놓친 지시사항이 없습니다.</div>'}
@@ -1517,7 +1517,7 @@ async function aiClassify() {
   }
 }
 function renderSettingsView(el) {
-  const cardLabels = {missed:'놓친 지시사항',calendar:'캘린더 일정',todo:'할일',notice:'공지사항'};
+  const cardLabels = {missed:'지시사항',calendar:'캘린더 일정',todo:'할일',notice:'공지사항'};
   el.innerHTML = `
     <div style="max-width:640px;display:flex;flex-direction:column;gap:16px">
 
@@ -1559,7 +1559,7 @@ function renderSettingsView(el) {
       <div class="panel">
         <div class="panel-head"><div class="panel-title">📊 대시보드 설정</div></div>
         <div style="display:flex;flex-direction:column;gap:12px">
-          <label class="field-label">놓친 지시사항 기준
+          <label class="field-label">지시사항 기준
             <select class="field-control" id="set-missed" onchange="saveDashSettings()">
               <option value="1" ${appSettings.missedDays===1?'selected':''}>오늘 하루</option>
               <option value="3" ${appSettings.missedDays===3?'selected':''}>최근 3일</option>
