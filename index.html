@@ -321,7 +321,7 @@ a{color:inherit;text-decoration:none}
       <div class="header-actions">
         <div id="header-sub" style="font-size:11px;color:var(--soft);padding-right:8px;border-right:1px solid var(--border2);">현재 localStorage 저장 모드</div>
         <button class="btn-sm" onclick="setView('settings')">⚙️ 설정</button>
-        <button class="btn-primary" onclick="setView('input')">+ 메시지 입력</button>
+        <button class="btn-primary" style="background:#7c3aed;line-height:1.3;padding:7px 16px;text-align:center" onclick="setView('input')">+ 메시지 입력<br><span style="font-size:11px;opacity:0.85">✨ AI 분류</span></button>
       </div>
     </header>
     <section class="content" id="main-content"></section>
@@ -978,7 +978,6 @@ function renderInputView(el) {
           <div class="input-buttons">
             <button class="btn-ghost" onclick="clearInput()">지우기</button>
             <button class="btn-primary" style="background:#7c3aed" onclick="aiClassify()">✨ AI 자동 분류</button>
-            <button class="btn-ghost" onclick="generatePreview()">수동 미리보기</button>
           </div>
         </div>
         <div id="input-error" style="display:none" class="input-error"></div>
