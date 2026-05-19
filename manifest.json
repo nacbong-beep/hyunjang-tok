@@ -20,5 +20,13 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/hyunjang-tok/",
+    "method": "GET",
+    "params": {
+      "text": "shared_text",
+      "title": "shared_title"
+    }
+  }
 }
