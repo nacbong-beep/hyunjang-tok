@@ -1283,21 +1283,42 @@ function doQuickSearch() {
   setView('search');
 }
 
+// ===== Service Worker 등록 =====
+if('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/hyunjang-tok/sw.js')
+    .then(reg => console.log('SW 등록 완료:', reg.scope))
+    .catch(err => console.log('SW 등록 실패:', err));
+}
+
 // ===== 카카오톡 공유 텍스트 처리 =====
-function handleSharedText() {
+async function handleSharedText() {
+  // URL 파라미터로 텍스트 공유
   const params = new URLSearchParams(window.location.search);
   const sharedText = params.get('shared_text') || params.get('text');
-  if(!sharedText) return;
-
-  window.history.replaceState({}, document.title, window.location.pathname);
-
-  // 날짜 필터 모달 표시
-  setTimeout(() => {
-    setView('input');
+  if(sharedText) {
+    window.history.replaceState({}, document.title, window.location.pathname);
     setTimeout(() => {
-      showDateFilterModal(sharedText);
-    }, 300);
-  }, 500);
+      setView('input');
+      setTimeout(() => showDateFilterModal(sharedText), 300);
+    }, 500);
+    return;
+  }
+
+  // 파일 공유 처리 (Service Worker가 캐시에 저장한 텍스트)
+  try {
+    const cache = await caches.open('shared-files');
+    const response = await cache.match('shared-text');
+    if(response) {
+      const text = await response.text();
+      await cache.delete('shared-text');
+      if(text) {
+        setTimeout(() => {
+          setView('input');
+          setTimeout(() => showDateFilterModal(text), 300);
+        }, 500);
+      }
+    }
+  } catch(e) { console.log('파일 공유 처리 실패:', e); }
 }
 
 function showDateFilterModal(sharedText) {
