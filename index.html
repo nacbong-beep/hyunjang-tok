@@ -1895,7 +1895,7 @@ function handleDayClick(dateStr) {
       ondragover="onDayDragOver(event,${i},'${dateStr}')"
       ondrop="onDayDrop(event,${i},'${dateStr}')"
       ondragend="onDayDragEnd(event,'${dateStr}')"
-      style="margin-bottom:8px;border:1px solid var(--border);border-left:3px solid ${item.type==='custom'?'#3b82f6':(item.title||'').includes('타설')?'#f5c518':'#7c3aed'};border-radius:8px;padding:12px;background:var(--surface);display:flex;align-items:flex-start;gap:8px;cursor:grab;transition:opacity 0.15s">
+      style="margin-bottom:8px;border:1px solid var(--border);border-left:3px solid ${/^휴무/.test((item.title||'').trim())?'#ef4444':(item.title||'').includes('타설')?'#f5c518':item.type==='custom'?'#3b82f6':'#7c3aed'};border-radius:8px;padding:12px;background:${/^휴무/.test((item.title||'').trim())?'#fff0f0':(item.title||'').includes('타설')?'#fffbe6':'var(--surface)'};display:flex;align-items:flex-start;gap:8px;cursor:grab;transition:opacity 0.15s">
       <span style="font-size:14px;color:var(--soft);margin-top:2px">⠿</span>
       <div style="flex:1;cursor:pointer" onclick="closeDayModal();${item.type==='custom'?`openEditEventModal('${item.id}')`:`openEditMsgEvent('${item.id}')`}">
         <span class="badge ${badgeClass(tag)}">${tagIcon(tag)} ${tag} ✏️</span>
