@@ -667,11 +667,11 @@ function renderSidebar() {
       ${navItem('📊','대시보드','dashboard')}
       ${navItem('📅','캘린더','calendar',calEvents.length)}
       ${navItem('✅','할일','todo',pending)}
+      ${navItem('⚙️','설정','settings')}
       <div class="nav-item ${currentView==='search'?'active':''}" onclick="setView('search')" style="margin:4px 0;border:1px solid rgba(255,255,255,.12);border-radius:9px">
         <span class="nav-icon">🔍</span>
         <span>검색</span>
       </div>
-      ${navItem('⚙️','설정','settings')}
     </div>
     <div class="nav-section">
       <div class="nav-label nav-collapsible" onclick="toggleSection('찾아보기')">
