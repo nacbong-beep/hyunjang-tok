@@ -1859,7 +1859,7 @@ function getUpcomingCustomEvents() {
 
 // 날짜 클릭 → 일정 있으면 목록, 없으면 추가 모달
 function handleDayClick(dateStr) {
-  const dayMsgs = messages.filter(m=>m.messageDate===dateStr&&normalizeTag(m.tag)==='일정');
+  const dayMsgs = messages.filter(m=>(m.eventDate||m.messageDate)===dateStr&&normalizeTag(m.tag)==='일정');
   const dayCustom = customEvents.filter(e=>e.date===dateStr);
   if(dayMsgs.length===0 && dayCustom.length===0) {
     openEventModal(dateStr);
@@ -1944,7 +1944,7 @@ function onDayDrop(e, toIdx, dateStr) {
   if(dragFromIdx===null || dragFromIdx===toIdx) { dragFromIdx=null; return; }
 
   // 해당 날짜 모든 아이템 수집
-  const dayMsgs = messages.filter(m=>m.messageDate===dateStr&&normalizeTag(m.tag)==='일정');
+  const dayMsgs = messages.filter(m=>(m.eventDate||m.messageDate)===dateStr&&normalizeTag(m.tag)==='일정');
   const dayCustom = customEvents.filter(ev=>ev.date===dateStr);
   let allIds = [
     ...dayMsgs.map(m=>m.id),
