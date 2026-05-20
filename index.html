@@ -1,4 +1,4 @@
-\<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -524,7 +524,7 @@ async function loadFromSupabase() {
       sbFetch('custom_events', 'GET', null, '?order=date'),
     ]);
     if (dbRooms) rooms = dbRooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sortOrder:r.sort_order}));
-    if (dbMsgs) messages = dbMsgs.map(m=>({id:m.id,roomName:m.room_name,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,messageDate:m.message_date,createdAt:m.created_at,isTodo:m.is_todo}));
+    if (dbMsgs) messages = dbMsgs.map(m=>({id:m.id,roomName:m.room_name,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,messageDate:m.message_date,eventDate:m.event_date,createdAt:m.created_at,isTodo:m.is_todo}));
     if (dbTodos) todos = dbTodos.map(t=>({id:t.id,messageId:t.message_id,title:t.title,tag:t.tag,roomName:t.room_name,dueDate:t.due_date,done:t.done,doneAt:t.done_at}));
     if (dbCustomEvents) customEvents = dbCustomEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag,memo:e.memo,createdAt:e.created_at}));
     console.log('✅ Supabase 로드 완료');
@@ -536,7 +536,7 @@ async function saveToSupabase() {
   try {
     await Promise.all([
       rooms.length ? sbFetch('rooms', 'POST', rooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sort_order:r.sortOrder})), '') : null,
-      messages.length ? sbFetch('messages', 'POST', messages.map(m=>({id:m.id,room_name:m.roomName,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,message_date:m.messageDate,created_at:m.createdAt,is_todo:m.isTodo})), '') : null,
+      messages.length ? sbFetch('messages', 'POST', messages.map(m=>({id:m.id,room_name:m.roomName,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,message_date:m.messageDate,event_date:m.eventDate||null,created_at:m.createdAt,is_todo:m.isTodo})), '') : null,
       todos.length ? sbFetch('todos', 'POST', todos.map(t=>({id:t.id,message_id:t.messageId,title:t.title,tag:t.tag,room_name:t.roomName,due_date:t.dueDate,done:t.done,done_at:t.doneAt||null})), '') : null,
       customEvents.length ? sbFetch('custom_events', 'POST', customEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag||'일정',memo:e.memo||'',created_at:e.createdAt||new Date().toISOString()})), '') : null,
     ]);
@@ -833,16 +833,16 @@ function renderDashboard(el) {
 // ===== 캘린더 =====
 function getCalendarEvents() {
   return messages
-    .filter(m=>m.messageDate&&normalizeTag(m.tag)==='일정')
-    .map(m=>({id:m.id,date:m.messageDate,title:m.summary,tag:normalizeTag(m.tag),roomName:m.roomName}))
+    .filter(m=>(m.eventDate||m.messageDate)&&normalizeTag(m.tag)==='일정')
+    .map(m=>({id:m.id,date:m.eventDate||m.messageDate,title:m.summary,tag:normalizeTag(m.tag),roomName:m.roomName}))
     .sort((a,b)=>a.date.localeCompare(b.date));
 }
 
 function getScheduleEvents() {
   const today = todayKey();
   return messages
-    .filter(m=>m.messageDate&&m.messageDate>=today&&normalizeTag(m.tag)==='일정')
-    .map(m=>({id:m.id,date:m.messageDate,title:m.summary,tag:normalizeTag(m.tag),roomName:m.roomName}))
+    .filter(m=>(m.eventDate||m.messageDate)&&(m.eventDate||m.messageDate)>=today&&normalizeTag(m.tag)==='일정')
+    .map(m=>({id:m.id,date:m.eventDate||m.messageDate,title:m.summary,tag:normalizeTag(m.tag),roomName:m.roomName}))
     .sort((a,b)=>a.date.localeCompare(b.date));
 }
 
@@ -1240,7 +1240,7 @@ function savePreview() {
   const newMsgs=previewItems.map(item=>({
     id:uid(),roomName:item.roomName,tag:normalizeTag(item.tag),
     sender:item.sender||'',summary:item.summary||item.content||'',
-    content:item.content||item.summary||'',messageDate:item.messageDate||null,
+    content:item.content||item.summary||'',messageDate:item.messageDate||null,eventDate:item.eventDate||null,
     createdAt:now,isTodo:Boolean(item.isTodo),
   }));
   const newTodos=newMsgs.filter(m=>m.isTodo).map(m=>({
@@ -1632,6 +1632,7 @@ async function aiClassify() {
       summary: item.summary || item.content || '',
       content: item.content || item.summary || '',
       messageDate: item.messageDate || null,
+      eventDate: item.eventDate || null,
       isTodo: Boolean(item.isTodo),
     }));
 
