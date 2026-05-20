@@ -738,6 +738,14 @@ function openRoom(id) {
   document.getElementById('header-title').textContent = room.name;
   renderSidebar();
   renderRoomView(document.getElementById('main-content'), id);
+  setTimeout(()=>{
+    const cal3=document.getElementById('room-cal-3month');
+    const cal1=document.getElementById('room-cal-1month');
+    if(cal3&&cal1){
+      if(window.innerWidth<=768){cal3.style.display='none';cal1.style.display='block';}
+      else{cal3.style.display='flex';cal1.style.display='none';}
+    }
+  },0);
 }
 
 function toggleSection(name) {
@@ -1092,10 +1100,10 @@ function renderRoomView(el, viewId) {
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#fee2e2;display:inline-block"></span>미입력</span>
         </div>
       </div>
-      <div style="display:flex;gap:24px;justify-content:center" id="room-cal-3month">
+      <div style="display:flex;gap:24px;justify-content:center" id="room-cal-3month" style="${window.innerWidth<=768?'display:none':''}">
         ${months.map(({y, mo}, i) => renderMiniCal(y, mo, i===1)).join('')}
       </div>
-      <div id="room-cal-1month" style="display:none">
+      <div id="room-cal-1month" style="${window.innerWidth<=768?'display:block':'display:none'}">
         ${renderMiniCal(months[1].y, months[1].mo, true)}
       </div>
     </div>
