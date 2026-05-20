@@ -717,7 +717,17 @@ function setView(v) {
   else if(currentView==='search') renderSearchView(el);
   else if(currentView==='input') renderInputView(el);
   else if(currentView==='settings') renderSettingsView(el);
-  else if(currentView.startsWith('room_')) renderRoomView(el,v);
+  else if(currentView.startsWith('room_')) {
+    renderRoomView(el,v);
+    setTimeout(()=>{
+      const cal3=document.getElementById('room-cal-3month');
+      const cal1=document.getElementById('room-cal-1month');
+      if(cal3&&cal1){
+        if(window.innerWidth<=768){cal3.style.display='none';cal1.style.display='block';}
+        else{cal3.style.display='flex';cal1.style.display='none';}
+      }
+    },0);
+  }
 }
 
 function openRoom(id) {
@@ -1070,7 +1080,7 @@ function renderRoomView(el, viewId) {
 
   // 기간 필터 상태
   const roomFilterKey = 'hj3_roomfilter_' + id;
-  const savedFilter = localStorage.getItem(roomFilterKey) || '30';
+  const savedFilter = localStorage.getItem(roomFilterKey) || '7';
 
   el.innerHTML = `
     <!-- 입력 현황 캘린더 -->
@@ -1082,24 +1092,29 @@ function renderRoomView(el, viewId) {
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#fee2e2;display:inline-block"></span>미입력</span>
         </div>
       </div>
-      <div style="display:flex;gap:24px;justify-content:center">
+      <div style="display:flex;gap:24px;justify-content:center" id="room-cal-3month">
         ${months.map(({y, mo}, i) => renderMiniCal(y, mo, i===1)).join('')}
+      </div>
+      <div id="room-cal-1month" style="display:none">
+        ${renderMiniCal(months[1].y, months[1].mo, true)}
       </div>
     </div>
 
     <!-- 태그 필터 + 기간 필터 -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
-      <div class="chip-row" style="margin-bottom:0;flex:1">
+    <div style="margin-bottom:10px">
+      <div class="chip-row" style="margin-bottom:8px;flex-wrap:wrap">
         <button class="chip ${!selectedCategory?'on':''}" onclick="selectedCategory=null;renderRoomView(document.getElementById('main-content'),'${viewId}')">전체</button>
         ${CATEGORIES.map(c=>`<button class="chip ${selectedCategory===c.tag?'on':''}" onclick="selectedCategory=selectedCategory==='${c.tag}'?null:'${c.tag}';renderRoomView(document.getElementById('main-content'),'${viewId}')">${c.icon} ${c.tag}</button>`).join('')}
       </div>
-      <select onchange="localStorage.setItem('${roomFilterKey}',this.value);renderRoomView(document.getElementById('main-content'),'${viewId}')"
-        style="border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--card);color:var(--text);cursor:pointer">
-        <option value="7" ${savedFilter==='7'?'selected':''}>최근 1주일</option>
-        <option value="30" ${savedFilter==='30'?'selected':''}>최근 1개월</option>
-        <option value="90" ${savedFilter==='90'?'selected':''}>최근 3개월</option>
-        <option value="999" ${savedFilter==='999'?'selected':''}>전체</option>
-      </select>
+      <div style="display:flex;justify-content:flex-end">
+        <select onchange="localStorage.setItem('${roomFilterKey}',this.value);renderRoomView(document.getElementById('main-content'),'${viewId}')"
+          style="border:1px solid var(--border2);border-radius:8px;padding:6px 10px;font-size:12px;background:var(--card);color:var(--text);cursor:pointer">
+          <option value="7" ${savedFilter==='7'?'selected':''}>최근 1주일</option>
+          <option value="30" ${savedFilter==='30'?'selected':''}>최근 1개월</option>
+          <option value="90" ${savedFilter==='90'?'selected':''}>최근 3개월</option>
+          <option value="999" ${savedFilter==='999'?'selected':''}>전체</option>
+        </select>
+      </div>
     </div>
 
     <!-- 날짜별 그룹핑 메시지 -->
@@ -1904,8 +1919,28 @@ function onDayDrop(e, toIdx, dateStr) {
 }
 
 function scrollToDate(dk) {
-  const el = document.getElementById('date-group-' + dk);
-  if(el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  const viewId = currentView;
+  const id = viewId.replace('room_','');
+  const room = rooms.find(r=>r.id===id);
+  if(!room) return;
+
+  const dayMsgs = messages.filter(m=>m.roomName===room.name && (m.messageDate||'').slice(0,10)===dk);
+  if(!dayMsgs.length) return;
+
+  const el = document.getElementById('main-content');
+  const d = new Date(dk);
+  const days = ['일','월','화','수','목','금','토'];
+  const label = `${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
+
+  el.innerHTML = `
+    <div style="margin-bottom:14px;display:flex;align-items:center;gap:10px">
+      <button onclick="renderRoomView(document.getElementById('main-content'),'${viewId}')"
+        style="border:1px solid var(--border2);background:var(--card);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;color:var(--text)">← 돌아가기</button>
+      <div style="font-size:15px;font-weight:800">📅 ${label} · ${dayMsgs.length}건</div>
+    </div>
+    <div class="panel">
+      ${dayMsgs.map(m=>msgItemClickable(m)).join('')}
+    </div>`;
 }
 
 function addFromDayModal() {
