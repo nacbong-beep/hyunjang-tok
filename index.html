@@ -719,14 +719,7 @@ function setView(v) {
   else if(currentView==='settings') renderSettingsView(el);
   else if(currentView.startsWith('room_')) {
     renderRoomView(el,v);
-    setTimeout(()=>{
-      const cal3=document.getElementById('room-cal-3month');
-      const cal1=document.getElementById('room-cal-1month');
-      if(cal3&&cal1){
-        if(window.innerWidth<=768){cal3.style.display='none';cal1.style.display='block';}
-        else{cal3.style.display='flex';cal1.style.display='none';}
-      }
-    },0);
+    setTimeout(applyRoomCalLayout, 0);
   }
 }
 
@@ -738,14 +731,7 @@ function openRoom(id) {
   document.getElementById('header-title').textContent = room.name;
   renderSidebar();
   renderRoomView(document.getElementById('main-content'), id);
-  setTimeout(()=>{
-    const cal3=document.getElementById('room-cal-3month');
-    const cal1=document.getElementById('room-cal-1month');
-    if(cal3&&cal1){
-      if(window.innerWidth<=768){cal3.style.display='none';cal1.style.display='block';}
-      else{cal3.style.display='flex';cal1.style.display='none';}
-    }
-  },0);
+  setTimeout(applyRoomCalLayout, 0);
 }
 
 function toggleSection(name) {
@@ -1071,9 +1057,9 @@ function renderRoomView(el, viewId) {
     }
     const header = isCenter
       ? `<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px">
-          <button onclick="localStorage.setItem('${calOffsetKey}', ${calOffset-1});renderRoomView(document.getElementById('main-content'),'${viewId}')" style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">‹</button>
+          <button onclick="localStorage.setItem('${calOffsetKey}', ${calOffset-1});renderRoomView(document.getElementById('main-content'),'${viewId}');setTimeout(applyRoomCalLayout,0)" style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">‹</button>
           <span style="font-size:11px;font-weight:800;color:var(--text)">${y}년 ${monthNames[mo]}</span>
-          <button onclick="localStorage.setItem('${calOffsetKey}', ${calOffset+1});renderRoomView(document.getElementById('main-content'),'${viewId}')" style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">›</button>
+          <button onclick="localStorage.setItem('${calOffsetKey}', ${calOffset+1});renderRoomView(document.getElementById('main-content'),'${viewId}');setTimeout(applyRoomCalLayout,0)" style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:20px;height:20px;font-size:11px;cursor:pointer;line-height:1">›</button>
         </div>`
       : `<div style="font-size:10px;font-weight:700;color:var(--soft);text-align:center;margin-bottom:6px">${y}년 ${monthNames[mo]}</div>`;
     return `
@@ -1100,10 +1086,10 @@ function renderRoomView(el, viewId) {
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#fee2e2;display:inline-block"></span>미입력</span>
         </div>
       </div>
-      <div style="display:flex;gap:24px;justify-content:center" id="room-cal-3month" style="${window.innerWidth<=768?'display:none':''}">
+      <div id="room-cal-3month">
         ${months.map(({y, mo}, i) => renderMiniCal(y, mo, i===1)).join('')}
       </div>
-      <div id="room-cal-1month" style="${window.innerWidth<=768?'display:block':'display:none'}">
+      <div id="room-cal-1month">
         ${renderMiniCal(months[1].y, months[1].mo, true)}
       </div>
     </div>
@@ -1924,6 +1910,21 @@ function onDayDrop(e, toIdx, dateStr) {
   const el = document.getElementById('main-content');
   if(currentView==='calendar') renderCalendarView(el);
   else if(currentView==='dashboard') renderDashboard(el);
+}
+
+function applyRoomCalLayout() {
+  const cal3 = document.getElementById('room-cal-3month');
+  const cal1 = document.getElementById('room-cal-1month');
+  if(!cal3||!cal1) return;
+  if(window.innerWidth <= 768) {
+    cal3.style.display = 'none';
+    cal1.style.display = 'block';
+  } else {
+    cal3.style.display = 'flex';
+    cal3.style.gap = '24px';
+    cal3.style.justifyContent = 'center';
+    cal1.style.display = 'none';
+  }
 }
 
 function scrollToDate(dk) {
