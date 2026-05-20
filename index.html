@@ -154,7 +154,7 @@ a{color:inherit;text-decoration:none}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border)}
 .day-label{padding:8px 4px;text-align:center;font-size:10px;font-weight:800;color:var(--soft);background:var(--bg);border-right:1px solid var(--border);letter-spacing:.5px}
 .day-label:first-child{color:#ef4444}
-.cal-cell{min-height:82px;padding:6px;border-right:1px solid var(--border);border-top:1px solid var(--border);background:var(--card);cursor:pointer;transition:background 0.1s;overflow:hidden}
+.cal-cell{min-height:108px;padding:6px;border-right:1px solid var(--border);border-top:1px solid var(--border);background:var(--card);cursor:pointer;transition:background 0.1s;overflow:hidden}
 .cal-cell:hover{background:var(--bg)}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-date{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;min-height:24px;display:flex;align-items:center;gap:2px;white-space:nowrap}
@@ -912,7 +912,7 @@ function calendarCard() {
               <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:2px;vertical-align:middle">휴무</span>':''}${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:2px;vertical-align:middle">근무</span>':''}
             </div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
-            ${allDayItems.slice(0,3).map(e=>
+            ${allDayItems.slice(0,4).map(e=>
               e.type==='msg'
                 ? `<span class="cal-event ev-purple" title="${e.title}">${shortTag(e.tag)}</span>`
                 : `<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`
@@ -991,7 +991,7 @@ function renderCalendarView(el) {
               <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:2px">휴무</span>':''}${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:2px">근무</span>':''}
             </div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
-            ${allDayItems.slice(0,3).map(e=>e.type==='msg'?`<span class="cal-event ev-purple" title="${e.title}">${shortTag(e.tag)}</span>`:`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
+            ${allDayItems.slice(0,4).map(e=>e.type==='msg'?`<span class="cal-event ev-purple" title="${e.title}">${shortTag(e.tag)}</span>`:`<span class="cal-event custom-ev" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
           </div>`;
         }).join('')}
       </div>
@@ -1017,7 +1017,7 @@ function renderCalendarView(el) {
     </div>`;
 
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:3fr 1fr;gap:16px;align-items:start">
+    <div style="display:grid;grid-template-columns:77fr 23fr;gap:16px;align-items:start">
       <div>${calHTML}</div>
       <div>${upcomingHTML}</div>
     </div>`;
