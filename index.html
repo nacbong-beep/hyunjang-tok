@@ -1086,12 +1086,10 @@ function renderRoomView(el, viewId) {
           <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#fee2e2;display:inline-block"></span>미입력</span>
         </div>
       </div>
-      <div id="room-cal-3month">
-        ${months.map(({y, mo}, i) => renderMiniCal(y, mo, i===1)).join('')}
-      </div>
-      <div id="room-cal-1month">
-        ${renderMiniCal(months[1].y, months[1].mo, true)}
-      </div>
+      ${window.innerWidth <= 768
+        ? `<div style="display:flex;justify-content:center">${renderMiniCal(months[1].y, months[1].mo, true)}</div>`
+        : `<div style="display:flex;gap:24px;justify-content:center">${months.map(({y, mo}, i) => renderMiniCal(y, mo, i===1)).join('')}</div>`
+      }
     </div>
 
     <!-- 태그 필터 + 기간 필터 -->
