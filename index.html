@@ -2088,14 +2088,16 @@ async function renderWeeklyView(el) {
                 const cellId = 'wcell_'+row+'_'+d.key;
                 const val = getWeeklyCell(wk, row, d.key);
                 const isToday = d.key === todayKey();
-                return '<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:' + (isToday?'#f8faff':'') + '">' +
-                  '<textarea id="' + cellId + '" style="width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit;transition:border 0.15s" ' +
-                  'onfocus="this.style.background='var(--card)';this.style.border='1px solid var(--primary)';this.style.boxShadow='0 0 0 3px rgba(26,35,50,.06)'" ' +
-                  'onblur="this.style.background='transparent';this.style.border='1px solid transparent';this.style.boxShadow='none'" ' +
-                  'onchange="setWeeklyCell('' + wk + '','' + row + '','' + d.key + '',this.value)" ' +
-                  'oninput="setWeeklyCell('' + wk + '','' + row + '','' + d.key + '',this.value)" ' +
-                  'placeholder="입력...">' + val + '</textarea>' +
-                  '</td>';
+                const bg = isToday ? '#f8faff' : '';
+                return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg}">
+                  <textarea id="${cellId}"
+                    style="width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit;transition:border 0.15s"
+                    onfocus="this.style.cssText='width:100%;min-height:72px;border:1px solid var(--primary);border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
+                    onblur="this.style.cssText='width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit'"
+                    onchange="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
+                    oninput="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
+                    placeholder="입력...">${val}</textarea>
+                </td>`;
               }).join('')}
             </tr>`).join('')}
           </tbody>
