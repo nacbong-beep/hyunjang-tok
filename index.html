@@ -885,6 +885,7 @@ function renderDashboard(el) {
       </div>
       <aside class="dashboard-right">${calendarCard()}</aside>
     </div>`;
+  setTimeout(() => drawRangeBarsInCell(calYear, calMonth, 'cal-grid-dash'), 0);
 }
 
 // ===== 캘린더 =====
@@ -923,13 +924,13 @@ function calendarCard() {
         </div>
         <button onclick="calNav(0)" style="height:28px;border:1px solid var(--border2);background:var(--card);border-radius:8px;font-size:12px;color:var(--muted);font-weight:700;cursor:pointer;padding:0 12px;transition:all 0.15s">오늘</button>
       </div>
-      <div class="calendar-grid">
+      <div class="calendar-grid" id="cal-grid-dash">
         ${['일','월','화','수','목','금','토'].map(d=>`<div class="day-label">${d}</div>`).join('')}
         ${cells.map((date,i)=>{
-          if(!date) return '<div class="cal-cell"></div>';
+          if(!date) return '<div class="cal-cell" data-dk=""></div>';
           const dk=dateKey(date);
           const dayEvents=events.filter(e=>e.date===dk);
-          const dayCustom=customEvents.filter(e=>e.date===dk);
+          const dayCustom=getCustomEventsForDate(dk);
 
           // 저장된 순서 적용해서 합치기
           const orderKey = 'hj3_order_'+dk;
@@ -950,17 +951,23 @@ function calendarCard() {
           const hasCustom=dayCustom.length>0;
           const isOffDay = dayCustom.some(e=>/^휴무/.test(e.title.trim()));
           const isWorkSat = dayCustom.some(e=>/^근무/.test(e.title.trim())) && date.getDay()===6;
-          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" onclick="handleDayClick('${dk}')">
+          const dayCustomSingleDash = dayCustom.filter(e=>!e.endDate&&!/^(휴무|근무)/.test(e.title.trim()));
+          let singleItemsDash = [
+            ...dayEvents.map(e=>({type:'msg',id:e.id,tag:e.tag,title:e.title})),
+            ...dayCustomSingleDash.map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo}))
+          ];
+          if(savedOrder.length){singleItemsDash.sort((a,b)=>{const ai=savedOrder.indexOf(a.id);const bi=savedOrder.indexOf(b.id);return(ai===-1?999:ai)-(bi===-1?999:bi);});}
+          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
             <div class="cal-date" style="${isOffDay?'color:#ef4444':''}">
               <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:2px;vertical-align:middle">휴무</span>':''}${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:2px;vertical-align:middle">근무</span>':''}
             </div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
-            ${allDayItems.slice(0,4).map(e=>
+            ${singleItemsDash.slice(0,3).map(e=>
               e.type==='msg'
                 ? `<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'ev-purple'}" title="${e.title}">${shortTag(e.tag)}</span>`
                 : `<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'custom-ev'}" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`
             ).join('')}
-            ${allDayItems.length>4?`<span class="cal-more" onclick="event.stopPropagation();handleDayClick('${dk}')">+${allDayItems.length-4} 더보기</span>`:''}
+            ${singleItemsDash.length>3?`<span class="cal-more" onclick="event.stopPropagation();handleDayClick('${dk}')">+${singleItemsDash.length-3} 더보기</span>`:''}
           </div>`;
         }).join('')}
       </div>
@@ -974,8 +981,10 @@ function calendarCard() {
           const borderColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
           const dateColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
           const icon = isOffDay ? '' : e.isCustom ? '✏️' : '📋';
+          const displayDate = e.isCustom && e.date < todayKey() ? todayKey() : e.date;
+          const dateLabel = e.isCustom && e.endDate ? formatDate(displayDate)+' ~ '+formatDate(e.endDate) : formatDate(displayDate);
           return `<div class="mini-schedule" style="cursor:pointer;border-left-color:${borderColor}" onclick="${e.isCustom?`openEditEventModal('${e.id}')` : `openEditMsgEvent('${e.id}')`}">
-            <div class="mini-date" style="color:${dateColor}">${formatDate(e.date)} ${icon}</div>
+            <div class="mini-date" style="color:${dateColor}">${dateLabel} ${icon}</div>
             <div class="mini-text">${e.title}</div>
             <div class="meta">${e.isCustom?(e.tag||'일정')+(e.memo?` · ${e.memo.slice(0,20)}`:''):e.roomName+' · '+e.tag}</div>
           </div>`;
@@ -1071,10 +1080,10 @@ function renderCalendarView(el) {
     </div>`;
 
   // 기간 일정 바 렌더링
-  setTimeout(() => drawRangeBarsInCell(y, mo), 0);
+  setTimeout(() => drawRangeBarsInCell(y, mo, 'cal-grid-main'), 0);
 }
 
-function drawRangeBarsInCell(y, mo) {
+function drawRangeBarsInCell(y, mo, gridId='cal-grid-main') {
   const rangeEvents = customEvents.filter(e => e.endDate && e.endDate !== e.date && !/^(휴무|근무)/.test(e.title.trim()));
   if(!rangeEvents.length) return;
 
@@ -1094,7 +1103,7 @@ function drawRangeBarsInCell(y, mo) {
 
     while(cur <= endD) {
       const dk = dateKey(cur);
-      const cell = document.querySelector(`#cal-grid-main [data-dk="${dk}"]`);
+      const cell = document.querySelector(`#${gridId} [data-dk="${dk}"]`);
       if(cell) {
         const isStart = dk === evStart;
         const isEnd = dk === evEnd;
