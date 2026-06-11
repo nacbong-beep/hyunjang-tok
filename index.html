@@ -519,16 +519,21 @@ async function sbFetch(table, method='GET', body=null, query='') {
 
 async function loadFromSupabase() {
   try {
-    const [dbRooms, dbMsgs, dbTodos, dbCustomEvents] = await Promise.all([
+    const [dbRooms, dbMsgs, dbTodos, dbCustomEvents, dbSettings] = await Promise.all([
       sbFetch('rooms', 'GET', null, '?order=sort_order'),
       sbFetch('messages', 'GET', null, '?order=created_at.desc'),
       sbFetch('todos', 'GET', null, '?order=created_at.desc'),
       sbFetch('custom_events', 'GET', null, '?order=date'),
+      sbFetch('user_settings', 'GET', null, '?select=settings&limit=1'),
     ]);
     if (dbRooms) rooms = dbRooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sortOrder:r.sort_order}));
     if (dbMsgs) messages = dbMsgs.map(m=>({id:m.id,roomName:m.room_name,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,messageDate:m.message_date,eventDate:m.event_date,createdAt:m.created_at,isTodo:m.is_todo}));
     if (dbTodos) todos = dbTodos.map(t=>({id:t.id,messageId:t.message_id,title:t.title,tag:t.tag,roomName:t.room_name,dueDate:t.due_date,done:t.done,doneAt:t.done_at}));
     if (dbCustomEvents) customEvents = dbCustomEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag,memo:e.memo,createdAt:e.created_at}));
+    if (dbSettings && dbSettings.length && dbSettings[0].settings) {
+      appSettings = {...appSettings, ...dbSettings[0].settings};
+      localStorage.setItem('hj3_settings', JSON.stringify(appSettings));
+    }
     console.log('✅ Supabase 로드 완료');
     return true;
   } catch(e) { console.error('Supabase 로드 실패:', e); return false; }
@@ -541,8 +546,27 @@ async function saveToSupabase() {
       messages.length ? sbFetch('messages', 'POST', messages.map(m=>({id:m.id,room_name:m.roomName,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,message_date:m.messageDate,event_date:m.eventDate||null,created_at:m.createdAt,is_todo:m.isTodo})), '') : null,
       todos.length ? sbFetch('todos', 'POST', todos.map(t=>({id:t.id,message_id:t.messageId,title:t.title,tag:t.tag,room_name:t.roomName,due_date:t.dueDate,done:t.done,done_at:t.doneAt||null})), '') : null,
       customEvents.length ? sbFetch('custom_events', 'POST', customEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag||'일정',memo:e.memo||'',created_at:e.createdAt||new Date().toISOString()})), '') : null,
+      saveSettingsToSupabase(),
     ]);
   } catch(e) { console.error('Supabase 저장 실패:', e); }
+}
+
+async function saveSettingsToSupabase() {
+  try {
+    await sbFetch('user_settings', 'POST', {
+      settings: appSettings,
+      updated_at: new Date().toISOString()
+    });
+  } catch(e) { console.warn('settings save error', e); }
+}
+
+async function loadSettingsFromSupabase() {
+  try {
+    const rows = await sbFetch('user_settings', 'GET', null, '?select=settings&limit=1');
+    if(!rows || !rows.length || !rows[0].settings) return;
+    appSettings = {...appSettings, ...rows[0].settings};
+    localStorage.setItem('hj3_settings', JSON.stringify(appSettings));
+  } catch(e) { console.warn('settings load error', e); }
 }
 
 // ===== 상수 =====
@@ -1740,7 +1764,8 @@ async function aiClassify() {
 }
 // ===== 주간업무일지 =====
 let weeklyData = JSON.parse(localStorage.getItem('hj3_weekly') || '{}');
-let weeklyOffset = 0; // 0=이번주, -1=지난주 등
+let weeklyOffset = 0;
+let weeklySaveTimer = null;
 
 function getWeekRange(offset) {
   const today = new Date();
@@ -1777,6 +1802,33 @@ function setWeeklyCell(wk, row, dateKey, val) {
   if(!weeklyData[wk]) weeklyData[wk] = {};
   weeklyData[wk][row+':'+dateKey] = val;
   localStorage.setItem('hj3_weekly', JSON.stringify(weeklyData));
+  // 디바운스 저장 (1초 후 Supabase 저장)
+  clearTimeout(weeklySaveTimer);
+  weeklySaveTimer = setTimeout(() => saveWeeklyCellToSupabase(wk, row, dateKey, val), 1000);
+}
+
+async function saveWeeklyCellToSupabase(wk, row, dateKey, val) {
+  try {
+    await sbFetch('weekly_report', 'POST', {
+      week_key: wk,
+      row_name: row,
+      date_key: dateKey,
+      content: val,
+      updated_at: new Date().toISOString()
+    });
+  } catch(e) { console.warn('weekly save error', e); }
+}
+
+async function loadWeeklyFromSupabase(wk) {
+  try {
+    const rows = await sbFetch('weekly_report', 'GET', null, `?week_key=eq.${wk}&select=row_name,date_key,content`);
+    if(!rows || !rows.length) return;
+    if(!weeklyData[wk]) weeklyData[wk] = {};
+    rows.forEach(r => {
+      weeklyData[wk][r.row_name+':'+r.date_key] = r.content;
+    });
+    localStorage.setItem('hj3_weekly', JSON.stringify(weeklyData));
+  } catch(e) { console.warn('weekly load error', e); }
 }
 
 async function aiDraftWeekly() {
@@ -1793,31 +1845,36 @@ async function aiDraftWeekly() {
     return days.some(d => d.key === dk);
   });
 
-  const prompt = `다음은 건설현장 주간(${days[0].key}~${days[5].key}) 메시지 목록입니다.
-메시지: ${JSON.stringify(weekMsgs.map(m=>({날짜:m.eventDate||m.messageDate,태그:m.tag,내용:m.summary})))}
-
-아래 형식의 JSON으로 주간업무일지를 작성해주세요. 각 구분(작업사항,검측사항,확인사항,서류사항,기타)별로 날짜에 맞게 내용을 넣어주세요.
-없는 항목은 빈 문자열로 두세요. 반드시 JSON만 반환하고 다른 텍스트는 없어야 합니다.
-형식: {"작업사항":{"${days[0].key}":"내용","${days[1].key}":"내용",...},"검측사항":{...},"확인사항":{...},"서류사항":{...},"기타":{...}}`;
-
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:prompt}]})
+    const res = await fetch('https://rjipklyccmwqodgdpbph.supabase.co/functions/v1/weekly', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_KEY}`},
+      body: JSON.stringify({
+        messages: weekMsgs.map(m=>({날짜:m.eventDate||m.messageDate, 태그:m.tag, 내용:m.summary})),
+        weekStart: days[0].key,
+        weekEnd: days[5].key,
+        days: days.map(d=>d.key)
+      })
     });
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
-    const clean = text.replace(/```json|```/g,'').trim();
+    if(!res.ok) throw new Error('서버오류 '+res.status);
+    const raw = await res.text();
+    const clean = raw.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
+    const saves = [];
     rows.forEach(row => {
       days.forEach(d => {
         const val = (parsed[row]||{})[d.key] || '';
-        if(val) setWeeklyCell(wk, row, d.key, val);
+        if(val) {
+          setWeeklyCell(wk, row, d.key, val);
+          saves.push(saveWeeklyCellToSupabase(wk, row, d.key, val));
+        }
       });
     });
+    await Promise.all(saves);
     showToast('✅ AI 초안이 작성됐어요!');
     renderWeeklyView(document.getElementById('main-content'));
   } catch(e) {
+    console.error(e);
     showToast('⚠️ AI 작성 실패. 직접 입력해주세요.');
   }
   btn.textContent = '🤖 AI 자동작성'; btn.disabled = false;
@@ -1864,9 +1921,12 @@ function copyWeeklyText() {
   navigator.clipboard.writeText(text).then(()=>showToast('📋 클립보드에 복사됐어요!'));
 }
 
-function renderWeeklyView(el) {
+async function renderWeeklyView(el) {
   const wk = weekKey(weeklyOffset);
   const days = getWeekDays(weeklyOffset);
+  // Supabase에서 최신 데이터 로드 후 렌더
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">불러오는 중...</div>';
+  await loadWeeklyFromSupabase(wk);
   const rows = ['작업사항','검측사항','확인사항','서류사항','기타'];
   const {mon, sat} = getWeekRange(weeklyOffset);
 
