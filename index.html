@@ -856,7 +856,7 @@ function renderDashboard(el) {
   const calEvents = getCalendarEvents();
   const pending = todos.filter(t=>!t.done);
   const tomorrowTodos = pending.filter(t=>t.dueDate===addDaysKey(1));
-  const weekTodos = pending.filter(t=>t.dueDate&&t.dueDate!==addDaysKey(1)&&t.dueDate<=addDaysKey(7));
+  const weekTodos = pending.filter(t=>t.dueDate&&t.dueDate!==addDaysKey(1)&&t.dueDate>=todayKey()&&t.dueDate<=addDaysKey(7));
 
   const cardMap = {
     missed: `<div class="summary-card missed" onclick="setView('cat_지시사항')"><div class="summary-card-icon">📋</div><div class="card-label">지시사항 (${missedDays===1?'오늘':'최근'+missedDays+'일'})</div><div class="card-num">${missedInstr.length}</div><div class="card-hint">확인 또는 후속 조치 필요</div></div>`,
