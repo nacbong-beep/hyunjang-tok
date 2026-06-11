@@ -1076,10 +1076,15 @@ function renderCalendarView(el) {
     </div>`;
 
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:77fr 23fr;gap:16px;align-items:start">
+    <div id="cal-layout" style="display:grid;grid-template-columns:77fr 23fr;gap:16px;align-items:start">
       <div>${calHTML}</div>
       <div>${upcomingHTML}</div>
-    </div>`;
+    </div>
+    <style>
+      @media(max-width:500px){
+        #cal-layout{grid-template-columns:1fr!important;}
+      }
+    </style>`;
 
   // 기간 일정 바 렌더링
   setTimeout(() => drawRangeBarsInCell(y, mo, 'cal-grid-main'), 0);
