@@ -992,8 +992,8 @@ function calendarCard() {
         </div>
         ${[...getScheduleEvents(), ...getUpcomingCustomEvents()].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,6).map(e=>{
           const isOffDay = e.isCustom && /^휴무/.test((e.title||'').trim());
-          const borderColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
-          const dateColor = isOffDay ? '#ef4444' : e.isCustom ? '#3b82f6' : '#7c3aed';
+          const borderColor = isOffDay ? '#ef4444' : e.isCustom ? (e.color&&e.color!=='none'?e.color:'#3b82f6') : '#7c3aed';
+          const dateColor = isOffDay ? '#ef4444' : e.isCustom ? (e.color&&e.color!=='none'?e.color:'#3b82f6') : '#7c3aed';
           const icon = isOffDay ? '' : e.isCustom ? '✏️' : '📋';
           const displayDate = e.isCustom && e.date < todayKey() ? todayKey() : e.date;
           const dateLabel = e.isCustom && e.endDate ? formatDate(displayDate)+' ~ '+formatDate(e.endDate) : formatDate(displayDate);
@@ -1076,8 +1076,8 @@ function renderCalendarView(el) {
       </div>
       ${[...getScheduleEvents(),...getUpcomingCustomEvents()].sort((a,b)=>a.date.localeCompare(b.date)).slice(0,10).map(e=>{
         const isOffDay=e.isCustom&&/^휴무/.test((e.title||'').trim());
-        const borderColor=isOffDay?'#ef4444':e.isCustom?'#3b82f6':'#7c3aed';
-        const dateColor=isOffDay?'#ef4444':e.isCustom?'#3b82f6':'#7c3aed';
+        const borderColor=isOffDay?'#ef4444':e.isCustom?(e.color&&e.color!=='none'?e.color:'#3b82f6'):'#7c3aed';
+        const dateColor=isOffDay?'#ef4444':e.isCustom?(e.color&&e.color!=='none'?e.color:'#3b82f6'):'#7c3aed';
         const icon=isOffDay?'':e.isCustom?'✏️':'📋';
         const displayDate=e.isCustom&&e.date<todayKey()?todayKey():e.date;
         const dateLabel=e.isCustom&&e.endDate?formatDate(displayDate)+' ~ '+formatDate(e.endDate):formatDate(displayDate);
