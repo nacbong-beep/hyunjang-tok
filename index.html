@@ -166,7 +166,7 @@ a{color:inherit;text-decoration:none}
 .holiday-name{font-size:9px;color:#ef4444;font-weight:700;margin-bottom:2px;line-height:1.2}
 .cal-event{display:block;font-size:10px;font-weight:700;line-height:1.4;padding:2px 5px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;position:relative;max-width:100%}
 .cal-event:hover::after{content:attr(title);position:absolute;left:0;top:100%;background:#1a2332;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;white-space:normal;width:160px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.2);line-height:1.4;font-weight:600}
-.ev-purple{background:#ede9fe;color:#6d28d9}.ev-green{background:#dcfce7;color:#15803d}.ev-tasel{background:#fff3b0!important;color:#7a6000!important;border-left:2px solid #f5c518!important}.cal-more{font-size:10px;color:var(--muted);font-weight:600;padding:1px 4px;cursor:pointer;}
+.ev-purple{background:#ede9fe;color:#6d28d9}.ev-green{background:#dcfce7;color:#15803d}.ev-tasel{background:#fff3b0!important;color:#7a6000!important;border-left:2px solid #f5c518!important}.ev-range-start::before{content:'◀ ';font-size:8px;opacity:.7}.ev-range-end::after{content:' ▶';font-size:8px;opacity:.7}.cal-more{font-size:10px;color:var(--muted);font-weight:600;padding:1px 4px;cursor:pointer;}
 .ev-blue{background:#dbeafe;color:#1e40af}.ev-yellow{background:#fef9c3;color:#854d0e}
 .ev-red{background:#fee2e2;color:#b91c1c}.ev-gray{background:#f1f5f9;color:#475569}
 .calendar-list{padding:14px 16px 16px}
@@ -427,7 +427,24 @@ a{color:inherit;text-decoration:none}
   <div class="modal" style="max-width:400px">
     <div class="modal-title" id="event-modal-title">📅 일정 추가</div>
     <input class="modal-input" id="event-title-input" placeholder="일정 제목 (예: 욕실 방수 검측)" />
-    <input class="modal-input" id="event-date-input" type="date" />
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer">
+        <input type="radio" name="event-date-type" value="single" id="event-type-single" checked onchange="toggleEventDateType()" style="cursor:pointer"> 단일 날짜
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer">
+        <input type="radio" name="event-date-type" value="range" id="event-type-range" onchange="toggleEventDateType()" style="cursor:pointer"> 기간
+      </label>
+    </div>
+    <div id="event-single-date">
+      <input class="modal-input" id="event-date-input" type="date" />
+    </div>
+    <div id="event-range-date" style="display:none">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <input class="modal-input" id="event-start-input" type="date" style="flex:1;margin-bottom:0" placeholder="시작일"/>
+        <span style="font-size:13px;color:var(--muted);flex-shrink:0">~</span>
+        <input class="modal-input" id="event-end-input" type="date" style="flex:1;margin-bottom:0" placeholder="종료일"/>
+      </div>
+    </div>
     <select class="modal-input" id="event-tag-input" style="cursor:pointer">
       <option value="일정">📅 일정</option>
       <option value="지시사항">📋 지시사항</option>
@@ -529,7 +546,7 @@ async function loadFromSupabase() {
     if (dbRooms) rooms = dbRooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sortOrder:r.sort_order}));
     if (dbMsgs) messages = dbMsgs.map(m=>({id:m.id,roomName:m.room_name,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,messageDate:m.message_date,eventDate:m.event_date,createdAt:m.created_at,isTodo:m.is_todo}));
     if (dbTodos) todos = dbTodos.map(t=>({id:t.id,messageId:t.message_id,title:t.title,tag:t.tag,roomName:t.room_name,dueDate:t.due_date,done:t.done,doneAt:t.done_at}));
-    if (dbCustomEvents) customEvents = dbCustomEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag,memo:e.memo,createdAt:e.created_at}));
+    if (dbCustomEvents) customEvents = dbCustomEvents.map(e=>({id:e.id,title:e.title,date:e.date,endDate:e.end_date||null,tag:e.tag,memo:e.memo,createdAt:e.created_at}));
     if (dbSettings && dbSettings.length && dbSettings[0].settings) {
       appSettings = {...appSettings, ...dbSettings[0].settings};
       localStorage.setItem('hj3_settings', JSON.stringify(appSettings));
@@ -545,7 +562,7 @@ async function saveToSupabase() {
       rooms.length ? sbFetch('rooms', 'POST', rooms.map(r=>({id:r.id,name:r.name,favorite:r.favorite,archived:r.archived,sort_order:r.sortOrder})), '') : null,
       messages.length ? sbFetch('messages', 'POST', messages.map(m=>({id:m.id,room_name:m.roomName,tag:m.tag,sender:m.sender,summary:m.summary,content:m.content,message_date:m.messageDate,event_date:m.eventDate||null,created_at:m.createdAt,is_todo:m.isTodo})), '') : null,
       todos.length ? sbFetch('todos', 'POST', todos.map(t=>({id:t.id,message_id:t.messageId,title:t.title,tag:t.tag,room_name:t.roomName,due_date:t.dueDate,done:t.done,done_at:t.doneAt||null})), '') : null,
-      customEvents.length ? sbFetch('custom_events', 'POST', customEvents.map(e=>({id:e.id,title:e.title,date:e.date,tag:e.tag||'일정',memo:e.memo||'',created_at:e.createdAt||new Date().toISOString()})), '') : null,
+      customEvents.length ? sbFetch('custom_events', 'POST', customEvents.map(e=>({id:e.id,title:e.title,date:e.date,end_date:e.endDate||null,tag:e.tag||'일정',memo:e.memo||'',created_at:e.createdAt||new Date().toISOString()})), '') : null,
       saveSettingsToSupabase(),
     ]);
   } catch(e) { console.error('Supabase 저장 실패:', e); }
@@ -999,7 +1016,7 @@ function renderCalendarView(el) {
           if(!date) return '<div class="cal-cell"></div>';
           const dk=dateKey(date);
           const dayEvents=events.filter(e=>e.date===dk);
-          const dayCustom=customEvents.filter(e=>e.date===dk);
+          const dayCustom=getCustomEventsForDate(dk);
           const orderKey='hj3_order_'+dk;
           const savedOrder=JSON.parse(localStorage.getItem(orderKey)||'[]');
           let allDayItems=[
@@ -2096,15 +2113,28 @@ function getUpcomingCustomEvents() {
   const today = todayKey();
   const limit = addDaysKey(appSettings.upcomingDays||7);
   return customEvents
-    .filter(e=>e.date>=today && (appSettings.upcomingDays===999 || e.date<=limit))
+    .filter(e=>{
+      const start = e.date;
+      const end = e.endDate || e.date;
+      return end >= today && (appSettings.upcomingDays===999 || start <= limit);
+    })
     .map(e=>({...e, isCustom:true}))
     .sort((a,b)=>a.date.localeCompare(b.date));
+}
+
+// 특정 날짜에 걸리는 customEvents 반환 (기간 일정 포함)
+function getCustomEventsForDate(dk) {
+  return customEvents.filter(e => {
+    const start = e.date;
+    const end = e.endDate || e.date;
+    return dk >= start && dk <= end;
+  });
 }
 
 // 날짜 클릭 → 일정 있으면 목록, 없으면 추가 모달
 function handleDayClick(dateStr) {
   const dayMsgs = messages.filter(m=>(m.eventDate||m.messageDate)===dateStr&&normalizeTag(m.tag)==='일정');
-  const dayCustom = customEvents.filter(e=>e.date===dateStr);
+  const dayCustom = getCustomEventsForDate(dateStr);
   if(dayMsgs.length===0 && dayCustom.length===0) {
     openEventModal(dateStr);
     return;
@@ -2283,11 +2313,21 @@ function openEventModal(dateStr) {
   document.getElementById('event-modal-title').textContent = '📅 일정 추가';
   document.getElementById('event-title-input').value = '';
   document.getElementById('event-date-input').value = dateStr || todayKey();
+  document.getElementById('event-start-input').value = dateStr || todayKey();
+  document.getElementById('event-end-input').value = dateStr || todayKey();
   document.getElementById('event-tag-input').value = '일정';
   document.getElementById('event-memo-input').value = '';
   document.getElementById('event-delete-btn').style.display = 'none';
+  document.getElementById('event-type-single').checked = true;
+  toggleEventDateType();
   document.getElementById('event-modal').style.display = 'flex';
   setTimeout(()=>document.getElementById('event-title-input').focus(), 100);
+}
+
+function toggleEventDateType() {
+  const isRange = document.getElementById('event-type-range').checked;
+  document.getElementById('event-single-date').style.display = isRange ? 'none' : 'block';
+  document.getElementById('event-range-date').style.display = isRange ? 'block' : 'none';
 }
 
 function openEditEventModal(id) {
@@ -2296,10 +2336,18 @@ function openEditEventModal(id) {
   editingEventId = id;
   document.getElementById('event-modal-title').textContent = '📅 일정 수정';
   document.getElementById('event-title-input').value = ev.title;
-  document.getElementById('event-date-input').value = ev.date;
   document.getElementById('event-tag-input').value = ev.tag || '일정';
   document.getElementById('event-memo-input').value = ev.memo || '';
   document.getElementById('event-delete-btn').style.display = 'block';
+  if(ev.endDate && ev.endDate !== ev.date) {
+    document.getElementById('event-type-range').checked = true;
+    document.getElementById('event-start-input').value = ev.date;
+    document.getElementById('event-end-input').value = ev.endDate;
+  } else {
+    document.getElementById('event-type-single').checked = true;
+    document.getElementById('event-date-input').value = ev.date;
+  }
+  toggleEventDateType();
   document.getElementById('event-modal').style.display = 'flex';
   setTimeout(()=>document.getElementById('event-title-input').focus(), 100);
 }
@@ -2311,16 +2359,19 @@ function closeEventModal() {
 
 function saveCustomEvent() {
   const title = document.getElementById('event-title-input').value.trim();
-  const date = document.getElementById('event-date-input').value;
   const tag = document.getElementById('event-tag-input').value;
   const memo = document.getElementById('event-memo-input').value.trim();
+  const isRange = document.getElementById('event-type-range').checked;
+  const date = isRange ? document.getElementById('event-start-input').value : document.getElementById('event-date-input').value;
+  const endDate = isRange ? document.getElementById('event-end-input').value : null;
   if(!title) { showToast('제목을 입력해주세요'); return; }
   if(!date) { showToast('날짜를 선택해주세요'); return; }
+  if(isRange && endDate && endDate < date) { showToast('종료일이 시작일보다 빠를 수 없어요'); return; }
   if(editingEventId) {
-    customEvents = customEvents.map(e=>e.id===editingEventId?{...e,title,date,tag,memo}:e);
+    customEvents = customEvents.map(e=>e.id===editingEventId?{...e,title,date,endDate:endDate||null,tag,memo}:e);
     showToast('✅ 일정이 수정됐어요!');
   } else {
-    customEvents.push({id:uid(),title,date,tag,memo,createdAt:new Date().toISOString()});
+    customEvents.push({id:uid(),title,date,endDate:endDate||null,tag,memo,createdAt:new Date().toISOString()});
     showToast('✅ 일정이 추가됐어요!');
   }
   save();
