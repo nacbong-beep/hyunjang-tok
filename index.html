@@ -1070,88 +1070,67 @@ function renderCalendarView(el) {
       <div>${upcomingHTML}</div>
     </div>`;
 
-  // 기간 일정 바 오버레이 렌더링
-  setTimeout(() => drawRangeBars('cal-grid-main', y, mo, cells), 0);
+  // 기간 일정 바 렌더링
+  setTimeout(() => drawRangeBarsInCell(y, mo), 0);
 }
 
-function drawRangeBars(gridId, y, mo, cells) {
-  const grid = document.getElementById(gridId);
-  if(!grid) return;
-
-  // 기간 일정 수집
+function drawRangeBarsInCell(y, mo) {
   const rangeEvents = customEvents.filter(e => e.endDate && e.endDate !== e.date && !/^(휴무|근무)/.test(e.title.trim()));
   if(!rangeEvents.length) return;
 
-  // 월의 첫날/마지막날
   const monthStart = dateKey(new Date(y, mo, 1));
   const monthEnd = dateKey(new Date(y, mo+1, 0));
-
   const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#f97316'];
 
   rangeEvents.forEach((ev, evIdx) => {
-    const start = ev.date > monthStart ? ev.date : monthStart;
-    const end = ev.endDate < monthEnd ? ev.endDate : monthEnd;
-    if(start > end) return;
-
     const color = COLORS[evIdx % COLORS.length];
+    const evStart = ev.date;
+    const evEnd = ev.endDate;
 
-    // 주 단위로 바 쪼개기 (줄바꿈)
-    let cur = new Date(start);
-    const endD = new Date(end);
+    // 월 내 모든 날짜 순회하며 해당 기간에 속하는 셀에 바 삽입
+    let cur = new Date(evStart > monthStart ? evStart : monthStart);
+    const endD = new Date(evEnd < monthEnd ? evEnd : monthEnd);
+    if(cur > endD) return;
 
     while(cur <= endD) {
-      // 이 주의 시작: cur, 끝: 토요일 or end
-      const weekEnd = new Date(cur);
-      const dayOfWeek = weekEnd.getDay();
-      const daysToSat = dayOfWeek === 6 ? 0 : 6 - dayOfWeek;
-      weekEnd.setDate(weekEnd.getDate() + daysToSat);
-      const segEnd = weekEnd < endD ? weekEnd : endD;
+      const dk = dateKey(cur);
+      const cell = document.querySelector(`#cal-grid-main [data-dk="${dk}"]`);
+      if(cell) {
+        const isStart = dk === evStart;
+        const isEnd = dk === evEnd;
+        const dow = cur.getDay(); // 0=일, 6=토
+        const isWeekStart = dow === 0; // 줄 시작
+        const isWeekEnd = dow === 6;   // 줄 끝
 
-      const segStartKey = dateKey(cur);
-      const segEndKey = dateKey(segEnd);
-
-      // 셀 찾기
-      const startCell = grid.querySelector(`[data-dk="${segStartKey}"]`);
-      const endCell = grid.querySelector(`[data-dk="${segEndKey}"]`);
-      if(startCell && endCell) {
-        const gridRect = grid.getBoundingClientRect();
-        const startRect = startCell.getBoundingClientRect();
-        const endRect = endCell.getBoundingClientRect();
-        const isStart = ev.date === segStartKey;
-        const isEnd = ev.endDate === segEndKey;
+        const showLabel = isStart || isWeekStart;
+        const roundLeft = isStart ? '4px' : '0px';
+        const roundRight = isEnd || isWeekEnd ? '4px' : '0px';
+        const marginLeft = isStart || isWeekStart ? '2px' : '0px';
+        const marginRight = isEnd || isWeekEnd ? '2px' : '0px';
 
         const bar = document.createElement('div');
-        bar.className = 'range-bar';
-        bar.title = ev.title;
         bar.style.cssText = `
-          position:absolute;
-          left:${startRect.left - gridRect.left + (isStart ? 4 : 0)}px;
-          width:${endRect.right - startRect.left - (isStart ? 4 : 0) - (isEnd ? 4 : 0)}px;
-          top:${startRect.top - gridRect.top + 28}px;
-          height:18px;
+          display:block;
+          margin:1px ${marginRight} 1px ${marginLeft};
+          height:16px;
           background:${color};
           color:#fff;
           font-size:10px;
           font-weight:700;
-          border-radius:${isStart ? '4px' : '0'} ${isEnd ? '4px' : '0'} ${isEnd ? '4px' : '0'} ${isStart ? '4px' : '0'};
-          padding:2px 6px;
+          border-radius:${roundLeft} ${roundRight} ${roundRight} ${roundLeft};
+          padding:1px 4px;
           overflow:hidden;
           white-space:nowrap;
           text-overflow:ellipsis;
           cursor:pointer;
-          z-index:10;
-          pointer-events:auto;
           line-height:14px;
-          box-shadow:0 1px 4px rgba(0,0,0,.15);
+          box-shadow:0 1px 3px rgba(0,0,0,.15);
         `;
-        bar.textContent = isStart ? ev.title : '';
+        bar.textContent = showLabel ? ev.title : ' ';
+        bar.title = ev.title;
         bar.onclick = (e) => { e.stopPropagation(); openEditEventModal(ev.id); };
-        grid.style.position = 'relative';
-        grid.appendChild(bar);
+        cell.appendChild(bar);
       }
-
-      // 다음 주 월요일로 이동
-      cur = new Date(segEnd);
       cur.setDate(cur.getDate() + 1);
     }
   });
