@@ -1065,8 +1065,10 @@ function renderCalendarView(el) {
         const borderColor=isOffDay?'#ef4444':e.isCustom?'#3b82f6':'#7c3aed';
         const dateColor=isOffDay?'#ef4444':e.isCustom?'#3b82f6':'#7c3aed';
         const icon=isOffDay?'':e.isCustom?'✏️':'📋';
+        const displayDate=e.isCustom&&e.date<todayKey()?todayKey():e.date;
+        const dateLabel=e.isCustom&&e.endDate?formatDate(displayDate)+' ~ '+formatDate(e.endDate):formatDate(displayDate);
         return `<div class="mini-schedule" style="cursor:pointer;border-left-color:${borderColor}" onclick="${e.isCustom?`openEditEventModal('${e.id}')`:` openEditMsgEvent('${e.id}')`}">
-          <div class="mini-date" style="color:${dateColor}">${formatDate(e.date)} ${icon}</div>
+          <div class="mini-date" style="color:${dateColor}">${dateLabel} ${icon}</div>
           <div class="mini-text">${e.title}</div>
           <div class="meta">${e.isCustom?(e.tag||'일정')+(e.memo?` · ${e.memo.slice(0,20)}`:''):e.roomName+' · '+e.tag}</div>
         </div>`;
