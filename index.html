@@ -1010,33 +1010,36 @@ function renderCalendarView(el) {
         </div>
         <button onclick="calNav(0)" style="height:28px;border:1px solid var(--border2);background:var(--card);border-radius:8px;font-size:12px;color:var(--muted);font-weight:700;cursor:pointer;padding:0 12px">오늘</button>
       </div>
-      <div class="calendar-grid">
+      <div class="calendar-grid" id="cal-grid-main">
         ${['일','월','화','수','목','금','토'].map(d=>`<div class="day-label">${d}</div>`).join('')}
         ${cells.map((date,i)=>{
-          if(!date) return '<div class="cal-cell"></div>';
+          if(!date) return '<div class="cal-cell" data-dk=""></div>';
           const dk=dateKey(date);
           const dayEvents=events.filter(e=>e.date===dk);
-          const dayCustom=getCustomEventsForDate(dk);
-          const orderKey='hj3_order_'+dk;
-          const savedOrder=JSON.parse(localStorage.getItem(orderKey)||'[]');
-          let allDayItems=[
-            ...dayEvents.map(e=>({type:'msg',id:e.id,tag:e.tag,title:e.title})),
-            ...dayCustom.filter(e=>!/^(휴무|근무)/.test(e.title.trim())).map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo}))
-          ];
-          if(savedOrder.length){allDayItems.sort((a,b)=>{const ai=savedOrder.indexOf(a.id);const bi=savedOrder.indexOf(b.id);return(ai===-1?999:ai)-(bi===-1?999:bi);});}
+          const dayCustomSingle=customEvents.filter(e=>e.date===dk&&!e.endDate&&!/^(휴무|근무)/.test(e.title.trim()));
+          const dayCustomRange=customEvents.filter(e=>e.endDate&&!/^(휴무|근무)/.test(e.title.trim()));
+          const allDayCustom=getCustomEventsForDate(dk);
           const isToday=isSameDay(date,new Date());
           const isSun=i%7===0;
           const holiday=appSettings.showHoliday!==false?getHoliday(y,mo,date.getDate()):null;
-          const hasCustom=dayCustom.length>0;
-          const isOffDay=dayCustom.some(e=>/^휴무/.test(e.title.trim()));
-          const isWorkSat=dayCustom.some(e=>/^근무/.test(e.title.trim()))&&date.getDay()===6;
-          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" onclick="handleDayClick('${dk}')">
+          const isOffDay=allDayCustom.some(e=>/^휴무/.test(e.title.trim()));
+          const isWorkSat=allDayCustom.some(e=>/^근무/.test(e.title.trim()))&&date.getDay()===6;
+          const hasCustom=allDayCustom.length>0;
+          // 단일 날짜 일정만 셀 안에 표시
+          const orderKey='hj3_order_'+dk;
+          const savedOrder=JSON.parse(localStorage.getItem(orderKey)||'[]');
+          let singleItems=[
+            ...dayEvents.map(e=>({type:'msg',id:e.id,tag:e.tag,title:e.title})),
+            ...dayCustomSingle.map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo}))
+          ];
+          if(savedOrder.length){singleItems.sort((a,b)=>{const ai=savedOrder.indexOf(a.id);const bi=savedOrder.indexOf(b.id);return(ai===-1?999:ai)-(bi===-1?999:bi);});}
+          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
             <div class="cal-date" style="${isOffDay?'color:#ef4444':''}">
               <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:8px;color:#ef4444;font-weight:900;margin-left:2px">휴무</span>':''}${isWorkSat?'<span style="font-size:8px;color:#0f766e;font-weight:900;margin-left:2px">근무</span>':''}
             </div>
             ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
-            ${allDayItems.slice(0,4).map(e=>e.type==='msg'?`<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'ev-purple'}" title="${e.title}">${shortTag(e.tag)}</span>`:`<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'custom-ev'}" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
-            ${allDayItems.length>4?`<span class="cal-more" onclick="event.stopPropagation();handleDayClick('${dk}')">+${allDayItems.length-4} 더보기</span>`:''}
+            ${singleItems.slice(0,3).map(e=>e.type==='msg'?`<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'ev-purple'}" title="${e.title}">${shortTag(e.tag)}</span>`:`<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'custom-ev'}" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}">${e.title}</span>`).join('')}
+            ${singleItems.length>3?`<span class="cal-more" onclick="event.stopPropagation();handleDayClick('${dk}')">+${singleItems.length-3} 더보기</span>`:''}
           </div>`;
         }).join('')}
       </div>
@@ -1066,6 +1069,92 @@ function renderCalendarView(el) {
       <div>${calHTML}</div>
       <div>${upcomingHTML}</div>
     </div>`;
+
+  // 기간 일정 바 오버레이 렌더링
+  setTimeout(() => drawRangeBars('cal-grid-main', y, mo, cells), 0);
+}
+
+function drawRangeBars(gridId, y, mo, cells) {
+  const grid = document.getElementById(gridId);
+  if(!grid) return;
+
+  // 기간 일정 수집
+  const rangeEvents = customEvents.filter(e => e.endDate && e.endDate !== e.date && !/^(휴무|근무)/.test(e.title.trim()));
+  if(!rangeEvents.length) return;
+
+  // 월의 첫날/마지막날
+  const monthStart = dateKey(new Date(y, mo, 1));
+  const monthEnd = dateKey(new Date(y, mo+1, 0));
+
+  const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#f97316'];
+
+  rangeEvents.forEach((ev, evIdx) => {
+    const start = ev.date > monthStart ? ev.date : monthStart;
+    const end = ev.endDate < monthEnd ? ev.endDate : monthEnd;
+    if(start > end) return;
+
+    const color = COLORS[evIdx % COLORS.length];
+
+    // 주 단위로 바 쪼개기 (줄바꿈)
+    let cur = new Date(start);
+    const endD = new Date(end);
+
+    while(cur <= endD) {
+      // 이 주의 시작: cur, 끝: 토요일 or end
+      const weekEnd = new Date(cur);
+      const dayOfWeek = weekEnd.getDay();
+      const daysToSat = dayOfWeek === 6 ? 0 : 6 - dayOfWeek;
+      weekEnd.setDate(weekEnd.getDate() + daysToSat);
+      const segEnd = weekEnd < endD ? weekEnd : endD;
+
+      const segStartKey = dateKey(cur);
+      const segEndKey = dateKey(segEnd);
+
+      // 셀 찾기
+      const startCell = grid.querySelector(`[data-dk="${segStartKey}"]`);
+      const endCell = grid.querySelector(`[data-dk="${segEndKey}"]`);
+      if(startCell && endCell) {
+        const gridRect = grid.getBoundingClientRect();
+        const startRect = startCell.getBoundingClientRect();
+        const endRect = endCell.getBoundingClientRect();
+        const isStart = ev.date === segStartKey;
+        const isEnd = ev.endDate === segEndKey;
+
+        const bar = document.createElement('div');
+        bar.className = 'range-bar';
+        bar.title = ev.title;
+        bar.style.cssText = `
+          position:absolute;
+          left:${startRect.left - gridRect.left + (isStart ? 4 : 0)}px;
+          width:${endRect.right - startRect.left - (isStart ? 4 : 0) - (isEnd ? 4 : 0)}px;
+          top:${startRect.top - gridRect.top + 28}px;
+          height:18px;
+          background:${color};
+          color:#fff;
+          font-size:10px;
+          font-weight:700;
+          border-radius:${isStart ? '4px' : '0'} ${isEnd ? '4px' : '0'} ${isEnd ? '4px' : '0'} ${isStart ? '4px' : '0'};
+          padding:2px 6px;
+          overflow:hidden;
+          white-space:nowrap;
+          text-overflow:ellipsis;
+          cursor:pointer;
+          z-index:10;
+          pointer-events:auto;
+          line-height:14px;
+          box-shadow:0 1px 4px rgba(0,0,0,.15);
+        `;
+        bar.textContent = isStart ? ev.title : '';
+        bar.onclick = (e) => { e.stopPropagation(); openEditEventModal(ev.id); };
+        grid.style.position = 'relative';
+        grid.appendChild(bar);
+      }
+
+      // 다음 주 월요일로 이동
+      cur = new Date(segEnd);
+      cur.setDate(cur.getDate() + 1);
+    }
+  });
 }
 
 // ===== 할일 =====
