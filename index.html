@@ -1111,7 +1111,10 @@ function drawRangeBarsInCell(y, mo) {
         const bar = document.createElement('div');
         bar.style.cssText = `
           display:block;
-          margin:1px ${marginRight} 1px ${marginLeft};
+          margin-top:2px;
+          margin-bottom:1px;
+          margin-left:${marginLeft};
+          margin-right:${marginRight};
           height:16px;
           background:${color};
           color:#fff;
@@ -1124,9 +1127,9 @@ function drawRangeBarsInCell(y, mo) {
           text-overflow:ellipsis;
           cursor:pointer;
           line-height:14px;
-          box-shadow:0 1px 3px rgba(0,0,0,.15);
         `;
-        bar.textContent = showLabel ? ev.title : ' ';
+        bar.textContent = showLabel ? ev.title : '';
+        bar.style.padding = showLabel ? '1px 6px' : '1px 0';
         bar.title = ev.title;
         bar.onclick = (e) => { e.stopPropagation(); openEditEventModal(ev.id); };
         cell.appendChild(bar);
