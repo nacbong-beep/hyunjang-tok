@@ -459,17 +459,14 @@ a{color:inherit;text-decoration:none}
     <div style="margin-bottom:12px">
       <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">색상 선택</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="event-color-picker">
-        <div onclick="selectEventColor('none')" id="color-none" style="width:28px;height:28px;border-radius:50%;background:transparent;cursor:pointer;border:3px solid transparent;flex-shrink:0;box-shadow:inset 0 0 0 1px #ccc;position:relative;overflow:hidden;" title="색상 없음"><div style="position:absolute;top:50%;left:0;right:0;height:2px;background:#ef4444;transform:rotate(-45deg);transform-origin:center"></div></div>
-        <div onclick="selectEventColor('#3b82f6')" id="color-3b82f6" style="width:28px;height:28px;border-radius:50%;background:#3b82f6;cursor:pointer;border:3px solid #1a2332;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#8b5cf6')" id="color-8b5cf6" style="width:28px;height:28px;border-radius:50%;background:#8b5cf633;border:2px solid #8b5cf6;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#10b981')" id="color-10b981" style="width:28px;height:28px;border-radius:50%;background:#10b98133;border:2px solid #10b981;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#f59e0b')" id="color-f59e0b" style="width:28px;height:28px;border-radius:50%;background:#f59e0b33;border:2px solid #f59e0b;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#ef4444')" id="color-ef4444" style="width:28px;height:28px;border-radius:50%;background:#ef444433;border:2px solid #ef4444;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#06b6d4')" id="color-06b6d4" style="width:28px;height:28px;border-radius:50%;background:#06b6d433;border:2px solid #06b6d4;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#f97316')" id="color-f97316" style="width:28px;height:28px;border-radius:50%;background:#f9731633;border:2px solid #f97316;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#ec4899')" id="color-ec4899" style="width:28px;height:28px;border-radius:50%;background:#ec489933;border:2px solid #ec4899;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#1a2332')" id="color-1a2332" style="width:28px;height:28px;border-radius:50%;background:#1a233233;border:2px solid #1a2332;cursor:pointer;flex-shrink:0"></div>
-        <div onclick="selectEventColor('#64748b')" id="color-64748b" style="width:28px;height:28px;border-radius:50%;background:#64748b33;border:2px solid #64748b;cursor:pointer;flex-shrink:0"></div>
+        <div onclick="selectEventColor('#ef4444')" id="color-ef4444" style="width:28px;height:28px;border-radius:50%;background:#ef444433;border:2px solid #ef4444;cursor:pointer;flex-shrink:0" title="빨강"></div>
+        <div onclick="selectEventColor('#f97316')" id="color-f97316" style="width:28px;height:28px;border-radius:50%;background:#f9731633;border:2px solid #f97316;cursor:pointer;flex-shrink:0" title="주황"></div>
+        <div onclick="selectEventColor('#f5c518')" id="color-f5c518" style="width:28px;height:28px;border-radius:50%;background:#f5c51833;border:2px solid #f5c518;cursor:pointer;flex-shrink:0" title="개나리"></div>
+        <div onclick="selectEventColor('#10b981')" id="color-10b981" style="width:28px;height:28px;border-radius:50%;background:#10b98133;border:2px solid #10b981;cursor:pointer;flex-shrink:0" title="초록"></div>
+        <div onclick="selectEventColor('#3b82f6')" id="color-3b82f6" style="width:28px;height:28px;border-radius:50%;background:#3b82f633;border:2px solid #3b82f6;cursor:pointer;flex-shrink:0" title="파랑"></div>
+        <div onclick="selectEventColor('#8b5cf6')" id="color-8b5cf6" style="width:28px;height:28px;border-radius:50%;background:#8b5cf633;border:2px solid #8b5cf6;cursor:pointer;flex-shrink:0" title="보라"></div>
+        <div onclick="selectEventColor('#64748b')" id="color-64748b" style="width:28px;height:28px;border-radius:50%;background:#64748b33;border:2px solid #64748b;cursor:pointer;flex-shrink:0" title="회색"></div>
+        <div onclick="selectEventColor('#1a2332')" id="color-1a2332" style="width:28px;height:28px;border-radius:50%;background:#1a233233;border:2px solid #1a2332;cursor:pointer;flex-shrink:0" title="검정"></div>
       </div>
       <input type="hidden" id="event-color-input" value="#3b82f6">
     </div>
@@ -954,7 +951,7 @@ function calendarCard() {
           const savedOrder = JSON.parse(localStorage.getItem(orderKey)||'[]');
           let allDayItems = [
             ...dayEvents.map(e=>({type:'msg',id:e.id,tag:e.tag,title:e.title})),
-            ...dayCustom.filter(e=>!/^(휴무|근무)/.test(e.title.trim())).map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo}))
+            ...dayCustom.filter(e=>!/^(휴무|근무)/.test(e.title.trim())).map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo,color:e.color||'none'}))
           ];
           if(savedOrder.length) {
             allDayItems.sort((a,b)=>{
@@ -971,7 +968,7 @@ function calendarCard() {
           const dayCustomSingleDash = dayCustom.filter(e=>!e.endDate&&!/^(휴무|근무)/.test(e.title.trim()));
           let singleItemsDash = [
             ...dayEvents.map(e=>({type:'msg',id:e.id,tag:e.tag,title:e.title})),
-            ...dayCustomSingleDash.map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo}))
+            ...dayCustomSingleDash.map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo,color:e.color||'none'}))
           ];
           if(savedOrder.length){singleItemsDash.sort((a,b)=>{const ai=savedOrder.indexOf(a.id);const bi=savedOrder.indexOf(b.id);return(ai===-1?999:ai)-(bi===-1?999:bi);});}
           return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
@@ -1056,7 +1053,7 @@ function renderCalendarView(el) {
           const savedOrder=JSON.parse(localStorage.getItem(orderKey)||'[]');
           let singleItems=[
             ...dayEvents.map(e=>({type:'msg',id:e.id,tag:e.tag,title:e.title})),
-            ...dayCustomSingle.map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo}))
+            ...dayCustomSingle.map(e=>({type:'custom',id:e.id,tag:e.tag||'일정',title:e.title,memo:e.memo,color:e.color||'none'}))
           ];
           if(savedOrder.length){singleItems.sort((a,b)=>{const ai=savedOrder.indexOf(a.id);const bi=savedOrder.indexOf(b.id);return(ai===-1?999:ai)-(bi===-1?999:bi);});}
           return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
@@ -1113,7 +1110,7 @@ function drawRangeBarsInCell(y, mo, gridId='cal-grid-main') {
 
   const monthStart = dateKey(new Date(y, mo, 1));
   const monthEnd = dateKey(new Date(y, mo+1, 0));
-  const COLORS = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#f97316'];
+  const COLORS = ['#ef4444','#f97316','#f5c518','#10b981','#3b82f6','#8b5cf6','#64748b','#1a2332'];
 
   rangeEvents.forEach((ev, evIdx) => {
     const color = ev.color || COLORS[evIdx % COLORS.length];
@@ -2256,7 +2253,7 @@ function handleDayClick(dateStr) {
   // 메시지 일정 + 직접 추가 일정 합쳐서 순서 관리
   const allItems = [
     ...dayMsgs.map(m=>({type:'msg', id:m.id, tag:normalizeTag(m.tag), title:m.summary, sub:m.roomName+(m.sender?' · '+m.sender:''), data:m})),
-    ...dayCustom.map(e=>({type:'custom', id:e.id, tag:normalizeTag(e.tag||'일정'), title:e.title, sub:e.memo||'', data:e}))
+    ...dayCustom.map(e=>({type:'custom', id:e.id, tag:normalizeTag(e.tag||'일정'), title:e.title, sub:e.memo||'', color:e.color||'none', data:e}))
   ];
 
   // 저장된 순서 적용
@@ -2428,7 +2425,7 @@ function openEventModal(dateStr) {
   document.getElementById('event-delete-btn').style.display = 'none';
   document.getElementById('event-type-single').checked = true;
   toggleEventDateType();
-  setTimeout(()=>selectEventColor(ev.color||'none'), 50);
+  setTimeout(()=>selectEventColor(ev.color||'#3b82f6'), 50);
   document.getElementById('event-modal').style.display = 'flex';
   setTimeout(()=>document.getElementById('event-title-input').focus(), 100);
 }
@@ -2465,7 +2462,7 @@ function openEditEventModal(id) {
     document.getElementById('event-date-input').value = ev.date;
   }
   toggleEventDateType();
-  setTimeout(()=>selectEventColor(ev.color||'none'), 50);
+  setTimeout(()=>selectEventColor(ev.color||'#3b82f6'), 50);
   document.getElementById('event-modal').style.display = 'flex';
   setTimeout(()=>document.getElementById('event-title-input').focus(), 100);
 }
