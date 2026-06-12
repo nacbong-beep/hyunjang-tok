@@ -2285,25 +2285,46 @@ async function renderWeeklyView(el) {
             </tr>
           </thead>
           <tbody>
-            ${rows.map((row, ri) => `
-            <tr style="background:${ri%2===0?'var(--card)':'var(--surface)'}">
-              <td style="font-weight:800;font-size:11px;text-align:center;white-space:nowrap;padding:12px 8px;color:var(--primary);border-right:2px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:.3px;vertical-align:middle">${row}</td>
+            ${['날씨','일정','작업사항','검측사항','확인사항','서류사항','기타'].map((row, ri) => {
+              const isWeather = row === '날씨';
+              const isSchedule = row === '일정';
+              const rowColors = {날씨:'#e0f2fe', 일정:'#f3e8ff'};
+              const rowBg = rowColors[row] || (ri%2===0?'var(--card)':'var(--surface)');
+              return `
+            <tr style="background:${rowBg}">
+              <td style="font-weight:800;font-size:11px;text-align:center;white-space:nowrap;padding:12px 8px;color:${isWeather?'#0369a1':isSchedule?'#7c3aed':'var(--primary)'};border-right:2px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:.3px;vertical-align:middle">
+                ${isWeather?'🌤️ 날씨':isSchedule?'📅 일정':row}
+              </td>
               ${days.map(d => {
+                const isToday = d.key === todayKey();
+                const bg = isToday ? (isWeather?'#bae6fd':isSchedule?'#ede9fe':'#f8faff') : '';
+                if(isSchedule) {
+                  // 캘린더 일정 자동 표시
+                  const dayEvents = [
+                    ...messages.filter(m=>(m.eventDate||m.messageDate)===d.key&&normalizeTag(m.tag)==='일정').map(m=>m.summary),
+                    ...customEvents.filter(e=>{const s=e.date,en=e.endDate||e.date;return d.key>=s&&d.key<=en;}).map(e=>e.title)
+                  ];
+                  return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg||'#f3e8ff'}">
+                    <div style="min-height:40px;font-size:11px;line-height:1.6;color:#7c3aed;font-weight:600;padding:4px">
+                      ${dayEvents.length ? dayEvents.map(e=>`<div style="margin-bottom:2px">• ${e}</div>`).join('') : '<span style="color:var(--soft);font-weight:400">-</span>'}
+                    </div>
+                  </td>`;
+                }
                 const cellId = 'wcell_'+row+'_'+d.key;
                 const val = getWeeklyCell(wk, row, d.key);
-                const isToday = d.key === todayKey();
-                const bg = isToday ? '#f8faff' : '';
+                const minH = isWeather ? '36px' : '72px';
                 return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg}">
                   <textarea id="${cellId}"
-                    style="width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit;transition:border 0.15s"
-                    onfocus="this.style.cssText='width:100%;min-height:72px;border:1px solid var(--primary);border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
-                    onblur="this.style.cssText='width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit'"
+                    style="width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit;transition:border 0.15s"
+                    onfocus="this.style.cssText='width:100%;min-height:${minH};border:1px solid var(--primary);border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
+                    onblur="this.style.cssText='width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit'"
                     onchange="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
                     oninput="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
-                    placeholder="">${val}</textarea>
+                    placeholder="${isWeather?'예) 맑음 25°C':''}">${val}</textarea>
                 </td>`;
               }).join('')}
-            </tr>`).join('')}
+            </tr>`;
+            }).join('')}
           </tbody>
         </table>
       </div>
