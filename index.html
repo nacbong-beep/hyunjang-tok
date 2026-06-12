@@ -2486,16 +2486,14 @@ async function renderLibraryView(el, storageType='library') {
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <div onclick="libSelectedCat['${storageType}']=null;renderLibraryView(document.getElementById('main-content'),'${storageType}')"
-            class="nav-item ${!curCat?'active':''}"
-            style="border-radius:8px;font-size:13px;color:${!curCat?'#fff':'var(--text)'}">
-            전체 <span style="margin-left:auto;font-size:11px;opacity:.7">${libraryDocs.length}</span>
+            style="display:flex;align-items:center;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:2px;background:${!curCat?'var(--primary)':'transparent'};color:${!curCat?'#fff':'var(--text)'};font-weight:${!curCat?'700':'400'}">
+            전체 <span style="margin-left:auto;font-size:11px;color:${!curCat?'rgba(255,255,255,.7)':'var(--muted)'}">${libraryDocs.length}</span>
           </div>
           ${LIBRARY_CATEGORIES.map(cat => {
             const cnt = libraryDocs.filter(d=>d.category===cat).length;
             const isActive = curCat === cat;
             return `<div onclick="libSelectedCat['${storageType}']='${cat}';renderLibraryView(document.getElementById('main-content'),'${storageType}')"
-              class="nav-item ${isActive?'active':''}"
-              style="border-radius:8px;font-size:13px;color:${isActive?'#fff':'var(--text)'}">
+              style="display:flex;align-items:center;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;margin-bottom:2px;background:${isActive?'var(--primary)':'transparent'};color:${isActive?'#fff':'var(--text)'};font-weight:${isActive?'700':'400'}">
               ${cat} <span style="margin-left:auto;font-size:11px;opacity:.7">${cnt}</span>
             </div>`;
           }).join('')}
