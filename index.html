@@ -2289,7 +2289,17 @@ async function renderWeeklyView(el) {
 }
 
 // ===== 건설라이브러리 =====
-let LIBRARY_CATEGORIES = JSON.parse(localStorage.getItem('hj3_lib_cats') || JSON.stringify(['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타']));
+let LIBRARY_CATEGORIES = [];
+const LIB_DEFAULT_CATS = {
+  library:      ['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타'],
+  drawing:      ['골조도면','건축도면','기계도면','전기도면','토목도면','기타'],
+  construction: ['타설현황','검측현황','품질관리','안전관리','하자보수','기타'],
+};
+const LIB_CAT_KEYS = {
+  library:      'hj3_lib_cats_library',
+  drawing:      'hj3_lib_cats_drawing',
+  construction: 'hj3_lib_cats_construction',
+};
 let libraryDocs = [];
 let libSelectedCat = null;
 let libViewDoc = null;
@@ -2351,7 +2361,7 @@ function saveLibraryCats() {
   });
   libCatDraft = libCatDraft.filter(c => c.trim());
   LIBRARY_CATEGORIES = [...libCatDraft];
-  const catKey = currentView==='drawing'?'hj3_lib_cats_drawing':currentView==='construction'?'hj3_lib_cats_construction':'hj3_lib_cats_library';
+  const catKey = LIB_CAT_KEYS[currentView] || LIB_CAT_KEYS.library;
   localStorage.setItem(catKey, JSON.stringify(LIBRARY_CATEGORIES));
   // Supabase user_settings에도 저장
   appSettings[catKey] = LIBRARY_CATEGORIES;
@@ -2439,23 +2449,23 @@ async function renderLibraryView(el, storageType='library') {
     construction: {label:'시공 관리', icon:'🏗️', catKey:'hj3_lib_cats_construction', bucket:'library'},
   };
   const menu = MENU_INFO[storageType] || MENU_INFO.library;
-  // Supabase settings 우선 → localStorage → 기본값
-  const fromSupabase = appSettings[menu.catKey];
-  const fromLocal = localStorage.getItem(menu.catKey);
-  if(fromSupabase && Array.isArray(fromSupabase)) {
+  // 카테고리 로드 - Supabase settings 우선 → localStorage → 기본값
+  const catKey = LIB_CAT_KEYS[storageType] || LIB_CAT_KEYS.library;
+  const fromSupabase = appSettings[catKey];
+  const fromLocal = localStorage.getItem(catKey);
+  if(fromSupabase && Array.isArray(fromSupabase) && fromSupabase.length > 0) {
     LIBRARY_CATEGORIES = fromSupabase;
-    localStorage.setItem(menu.catKey, JSON.stringify(fromSupabase));
+    localStorage.setItem(catKey, JSON.stringify(fromSupabase));
   } else if(fromLocal) {
     LIBRARY_CATEGORIES = JSON.parse(fromLocal);
   } else {
+    // 공정표 관리의 경우 기존 hj3_lib_cats 마이그레이션
     const legacyCats = localStorage.getItem('hj3_lib_cats');
     if(storageType==='library' && legacyCats) {
       LIBRARY_CATEGORIES = JSON.parse(legacyCats);
-      localStorage.setItem(menu.catKey, legacyCats);
+      localStorage.setItem(catKey, legacyCats);
     } else {
-      LIBRARY_CATEGORIES = storageType==='library' ? ['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타'] :
-        storageType==='drawing' ? ['골조도면','건축도면','기계도면','전기도면','토목도면','기타'] :
-        ['타설현황','검측현황','품질관리','안전관리','하자보수','기타'];
+      LIBRARY_CATEGORIES = [...(LIB_DEFAULT_CATS[storageType] || LIB_DEFAULT_CATS.library)];
     }
   }
 
@@ -2680,6 +2690,44 @@ async function openLibraryDoc(id) {
   document.getElementById('lib-view-delete').onclick = () => deleteLibraryDoc(doc.id, doc.file_path);
   const url = await getLibraryFileUrl(doc.file_path);
   if(url) document.getElementById('lib-view-img').src = url;
+}
+
+function printLibraryDoc() {
+  const imgSrc = document.getElementById('lib-view-img').src;
+  const title = document.getElementById('lib-view-title').textContent;
+  const meta = document.getElementById('lib-view-meta').textContent;
+  if(!imgSrc) { showToast('이미지를 불러오는 중이에요. 잠시 후 다시 시도해주세요.'); return; }
+
+  const printWin = window.open('', '_blank', 'width=1000,height=800');
+  const doc = printWin.document;
+  doc.open();
+  doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title>');
+  doc.write('<style>');
+  doc.write('* { margin:0; padding:0; box-sizing:border-box; }');
+  doc.write('body { font-family: sans-serif; }');
+  doc.write('.header { padding:10px 16px; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center; }');
+  doc.write('.header h1 { font-size:14px; font-weight:700; color:#1a2332; }');
+  doc.write('.header p { font-size:11px; color:#64748b; margin-top:2px; }');
+  doc.write('.img-wrap { padding:10px; text-align:center; }');
+  doc.write('img { max-width:100%; height:auto; }');
+  doc.write('@media print {');
+  doc.write('  .no-print { display:none !important; }');
+  doc.write('  @page { margin:10mm; size:auto; }');
+  doc.write('  body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }');
+  doc.write('}');
+  doc.write('</style></head><body>');
+  doc.write('<div class="header no-print">');
+  doc.write('<div><h1>' + title + '</h1><p>' + meta + '</p></div>');
+  doc.write('<button onclick="window.print()" style="border:1px solid #1a2332;background:#1a2332;color:#fff;border-radius:6px;padding:7px 16px;font-size:13px;cursor:pointer;font-weight:700">🖨️ 인쇄</button>');
+  doc.write('</div>');
+  doc.write('<div class="img-wrap"><img src="' + imgSrc + '"></div>');
+  doc.write('</body></html>');
+  doc.close();
+
+  // 이미지 로드 후 자동 인쇄
+  printWin.onload = () => {
+    setTimeout(() => printWin.print(), 500);
+  };
 }
 
 function closeLibraryDoc() {
