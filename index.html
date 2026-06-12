@@ -1962,7 +1962,11 @@ function setWeeklyCell(wk, row, dateKey, val) {
 
 async function saveWeeklyCellToSupabase(wk, row, dateKey, val) {
   try {
+    const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+    let userId = null;
+    try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch(e) {}
     await sbFetch('weekly_report', 'POST', {
+      user_id: userId,
       week_key: wk,
       row_name: row,
       date_key: dateKey,
@@ -2310,10 +2314,12 @@ let libViewDoc = null;
 // ===== 카테고리 관리 =====
 let libCatDraft = [];
 
-function openLibraryCatManager() {
+function openLibraryCatManager(storageType) {
   libCatDraft = [...LIBRARY_CATEGORIES];
   renderLibraryCatList();
-  document.getElementById('lib-cat-modal').style.display = 'flex';
+  const modal = document.getElementById('lib-cat-modal');
+  modal.style.display = 'flex';
+  modal.dataset.storageType = storageType || currentView || 'library';
   document.getElementById('lib-cat-new-input').value = '';
 }
 
@@ -2364,7 +2370,8 @@ async function saveLibraryCats() {
   });
   libCatDraft = libCatDraft.filter(c => c.trim());
   LIBRARY_CATEGORIES = [...libCatDraft];
-  const docType = currentView || 'library';
+  const _catModal = document.getElementById('lib-cat-modal');
+  const docType = _catModal.dataset.storageType || currentView || 'library';
   await saveLibraryCatsToSupabase(docType, LIBRARY_CATEGORIES);
   closeLibraryCatManager();
   showToast('✅ 공종 분류가 저장됐어요!');
@@ -2498,7 +2505,7 @@ async function renderLibraryView(el, storageType='library') {
       <div class="panel" style="padding:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div class="panel-title" style="font-size:13px">📚 공종 분류</div>
-          <button onclick="openLibraryCatManager()" style="border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px" title="카테고리 관리">⚙️ 관리</button>
+          <button onclick="openLibraryCatManager('${storageType}')" style="border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px" title="카테고리 관리">⚙️ 관리</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <div onclick="libSelectedCat['${storageType}']=null;renderLibraryView(document.getElementById('main-content'),'${storageType}')"
