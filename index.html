@@ -2292,13 +2292,7 @@ async function renderWeeklyView(el) {
 // ===== 건설라이브러리 =====
 let LIBRARY_CATEGORIES = [];
 
-// 구버전 카테고리 마이그레이션
-(function migrateLegacyCats() {
-  const legacy = localStorage.getItem('hj3_lib_cats');
-  if(legacy && !localStorage.getItem('hj3_lib_cats_library')) {
-    localStorage.setItem('hj3_lib_cats_library', legacy);
-  }
-})();
+
 const LIB_DEFAULT_CATS = {
   library:      ['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타'],
   drawing:      ['골조도면','건축도면','기계도면','전기도면','토목도면','기타'],
@@ -2363,22 +2357,47 @@ function moveLibraryCat(i, dir) {
   renderLibraryCatList();
 }
 
-function saveLibraryCats() {
+async function saveLibraryCats() {
   // 현재 입력값 동기화
   document.querySelectorAll('#lib-cat-list input').forEach((inp, i) => {
     if(inp.value.trim()) libCatDraft[i] = inp.value.trim();
   });
   libCatDraft = libCatDraft.filter(c => c.trim());
   LIBRARY_CATEGORIES = [...libCatDraft];
-  const catKey = LIB_CAT_KEYS[currentView] || LIB_CAT_KEYS.library;
-  localStorage.setItem(catKey, JSON.stringify(LIBRARY_CATEGORIES));
-  // Supabase user_settings에도 저장
-  appSettings[catKey] = LIBRARY_CATEGORIES;
-  localStorage.setItem('hj3_settings', JSON.stringify(appSettings));
-  saveSettingsToSupabase().catch(e=>console.warn(e));
+  const docType = currentView || 'library';
+  await saveLibraryCatsToSupabase(docType, LIBRARY_CATEGORIES);
   closeLibraryCatManager();
   showToast('✅ 공종 분류가 저장됐어요!');
-  renderLibraryView(document.getElementById('main-content'), currentView);
+  renderLibraryView(document.getElementById('main-content'), docType);
+}
+
+async function saveLibraryCatsToSupabase(docType, cats) {
+  try {
+    const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+    let userId = null;
+    try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch(e) {}
+    await fetch(`${SUPABASE_URL}/rest/v1/library_categories`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ doc_type: docType, categories: cats, user_id: userId, updated_at: new Date().toISOString() })
+    });
+  } catch(e) { console.warn('category save error', e); }
+}
+
+async function loadLibraryCatsFromSupabase(docType) {
+  try {
+    const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/library_categories?doc_type=eq.${docType}&select=categories&limit=1`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
+    });
+    if(!res.ok) return null;
+    const data = await res.json();
+    return data && data.length ? data[0].categories : null;
+  } catch(e) { return null; }
 }
 
 async function loadLibraryDocs(storageType='library') {
@@ -2458,24 +2477,12 @@ async function renderLibraryView(el, storageType='library') {
     construction: {label:'시공 관리', icon:'🏗️', catKey:'hj3_lib_cats_construction', bucket:'library'},
   };
   const menu = MENU_INFO[storageType] || MENU_INFO.library;
-  // 카테고리 로드 - Supabase settings 우선 → localStorage → 기본값
-  const catKey = LIB_CAT_KEYS[storageType] || LIB_CAT_KEYS.library;
-  const fromSupabase = appSettings[catKey];
-  const fromLocal = localStorage.getItem(catKey);
-  if(fromSupabase && Array.isArray(fromSupabase) && fromSupabase.length > 0) {
-    LIBRARY_CATEGORIES = fromSupabase;
-    localStorage.setItem(catKey, JSON.stringify(fromSupabase));
-  } else if(fromLocal) {
-    LIBRARY_CATEGORIES = JSON.parse(fromLocal);
+  // 카테고리 로드 - Supabase library_categories 테이블 우선
+  const sbCats = await loadLibraryCatsFromSupabase(storageType);
+  if(sbCats && Array.isArray(sbCats) && sbCats.length > 0) {
+    LIBRARY_CATEGORIES = sbCats;
   } else {
-    // 공정표 관리의 경우 기존 hj3_lib_cats 마이그레이션
-    const legacyCats = localStorage.getItem('hj3_lib_cats');
-    if(storageType==='library' && legacyCats) {
-      LIBRARY_CATEGORIES = JSON.parse(legacyCats);
-      localStorage.setItem(catKey, legacyCats);
-    } else {
-      LIBRARY_CATEGORIES = [...(LIB_DEFAULT_CATS[storageType] || LIB_DEFAULT_CATS.library)];
-    }
+    LIBRARY_CATEGORIES = [...(LIB_DEFAULT_CATS[storageType] || LIB_DEFAULT_CATS.library)];
   }
 
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">불러오는 중...</div>';
