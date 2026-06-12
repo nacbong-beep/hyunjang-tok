@@ -2301,7 +2301,7 @@ const LIB_CAT_KEYS = {
   construction: 'hj3_lib_cats_construction',
 };
 let libraryDocs = [];
-let libSelectedCat = null;
+let libSelectedCat = {library:null, drawing:null, construction:null};
 let libViewDoc = null;
 
 // ===== 카테고리 관리 =====
@@ -2472,8 +2472,8 @@ async function renderLibraryView(el, storageType='library') {
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">불러오는 중...</div>';
   await loadLibraryDocs(storageType);
 
-  const cats = libSelectedCat ? [libSelectedCat] : LIBRARY_CATEGORIES;
-  const filtered = libSelectedCat ? libraryDocs.filter(d => d.category === libSelectedCat) : libraryDocs;
+  const curCat = libSelectedCat[storageType] || null;
+  const filtered = curCat ? libraryDocs.filter(d => d.category === curCat) : libraryDocs;
 
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start">
@@ -2485,15 +2485,15 @@ async function renderLibraryView(el, storageType='library') {
           <button onclick="openLibraryCatManager()" style="border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px" title="카테고리 관리">⚙️ 관리</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
-          <div onclick="libSelectedCat=null;renderLibraryView(document.getElementById('main-content'))"
-            class="nav-item ${!libSelectedCat?'active':''}"
-            style="border-radius:8px;font-size:13px;color:${!libSelectedCat?'#fff':'var(--text)'}">
+          <div onclick="libSelectedCat['${storageType}']=null;renderLibraryView(document.getElementById('main-content'),'${storageType}')"
+            class="nav-item ${!curCat?'active':''}"
+            style="border-radius:8px;font-size:13px;color:${!curCat?'#fff':'var(--text)'}">
             전체 <span style="margin-left:auto;font-size:11px;opacity:.7">${libraryDocs.length}</span>
           </div>
           ${LIBRARY_CATEGORIES.map(cat => {
             const cnt = libraryDocs.filter(d=>d.category===cat).length;
-            const isActive = libSelectedCat === cat;
-            return `<div onclick="libSelectedCat='${cat}';renderLibraryView(document.getElementById('main-content'))"
+            const isActive = curCat === cat;
+            return `<div onclick="libSelectedCat['${storageType}']='${cat}';renderLibraryView(document.getElementById('main-content'),'${storageType}')"
               class="nav-item ${isActive?'active':''}"
               style="border-radius:8px;font-size:13px;color:${isActive?'#fff':'var(--text)'}">
               ${cat} <span style="margin-left:auto;font-size:11px;opacity:.7">${cnt}</span>
@@ -2613,7 +2613,8 @@ function openLibraryUpload(file) {
     };
     reader.readAsDataURL(file);
   }
-  if(libSelectedCat) document.getElementById('lib-cat-input').value = libSelectedCat;
+  const _curCat = libSelectedCat[currentView] || null;
+  if(_curCat) document.getElementById('lib-cat-input').value = _curCat;
   // 날짜 기본 제목
   const today = new Date();
   document.getElementById('lib-title-input').value = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')} `;
