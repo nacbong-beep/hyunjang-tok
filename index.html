@@ -746,7 +746,9 @@ function renderSidebar() {
       ${navItem('📊','대시보드','dashboard')}
       ${navItem('📅','캘린더','calendar',calEvents.length)}
       ${navItem('📋','주간업무일지','weekly')}
-      ${navItem('📚','건설라이브러리','library')}
+      ${navItem('📊','공정표 관리','library')}
+      ${navItem('📐','도면 관리','drawing')}
+      ${navItem('🏗️','시공 관리','construction')}
       ${navItem('✅','할일','todo',pending)}
       ${navItem('⚙️','설정','settings')}
       <div class="nav-item ${currentView==='search'?'active':''}" onclick="setView('search')" style="margin:4px 0;border:1px solid rgba(255,255,255,.12);border-radius:9px">
@@ -789,7 +791,7 @@ function setView(v) {
   currentView = v;
   closeSidebar();
   if(v.startsWith('cat_')) { selectedCategory=v.replace('cat_',''); currentView='search'; }
-  const titles = {dashboard:'대시보드',calendar:'캘린더',weekly:'주간업무일지',library:'건설라이브러리',todo:'할일',search:'검색',input:'메시지 입력',settings:'설정'};
+  const titles = {dashboard:'대시보드',calendar:'캘린더',weekly:'주간업무일지',library:'공정표 관리',drawing:'도면 관리',construction:'시공 관리',todo:'할일',search:'검색',input:'메시지 입력',settings:'설정'};
   document.getElementById('header-title').textContent = titles[v]||(v.startsWith('cat_')?v.replace('cat_','')+'  검색':v);
   const guideEl = document.getElementById('header-guide');
   if(guideEl) guideEl.style.display = (currentView==='dashboard') ? 'block' : 'none';
@@ -801,7 +803,9 @@ function setView(v) {
   else if(currentView==='search') renderSearchView(el);
   else if(currentView==='input') renderInputView(el);
   else if(currentView==='weekly') renderWeeklyView(el);
-  else if(currentView==='library') renderLibraryView(el);
+  else if(currentView==='library') renderLibraryView(el, 'library');
+  else if(currentView==='drawing') renderLibraryView(el, 'drawing');
+  else if(currentView==='construction') renderLibraryView(el, 'construction');
   else if(currentView==='settings') renderSettingsView(el);
   else if(currentView.startsWith('room_')) {
     renderRoomView(el,v);
@@ -2347,16 +2351,17 @@ function saveLibraryCats() {
   });
   libCatDraft = libCatDraft.filter(c => c.trim());
   LIBRARY_CATEGORIES = [...libCatDraft];
-  localStorage.setItem('hj3_lib_cats', JSON.stringify(LIBRARY_CATEGORIES));
+  const catKey = currentView==='drawing'?'hj3_lib_cats_drawing':currentView==='construction'?'hj3_lib_cats_construction':'hj3_lib_cats_library';
+  localStorage.setItem(catKey, JSON.stringify(LIBRARY_CATEGORIES));
   closeLibraryCatManager();
   showToast('✅ 공종 분류가 저장됐어요!');
   renderLibraryView(document.getElementById('main-content'));
 }
 
-async function loadLibraryDocs() {
+async function loadLibraryDocs(storageType='library') {
   try {
     const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/library_docs?select=*&order=created_at.desc`, {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/library_docs?doc_type=eq.${storageType}&select=*&order=created_at.desc`, {
       headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
     });
     if(res.ok) libraryDocs = await res.json();
@@ -2390,7 +2395,7 @@ async function uploadLibraryFile(file, category, title, memo) {
       'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json', 'Prefer': 'return=representation'
     },
-    body: JSON.stringify({ category, title, memo, file_path: filePath, file_name: file.name, user_id: userId })
+    body: JSON.stringify({ category, title, memo, file_path: filePath, file_name: file.name, user_id: userId, doc_type: currentView||'library' })
   });
   if(!dbRes.ok) throw new Error('DB 저장 실패');
   return await dbRes.json();
@@ -2423,9 +2428,21 @@ async function deleteLibraryDoc(id, filePath) {
   renderLibraryView(document.getElementById('main-content'));
 }
 
-async function renderLibraryView(el) {
+async function renderLibraryView(el, storageType='library') {
+  const MENU_INFO = {
+    library: {label:'공정표 관리', icon:'📊', catKey:'hj3_lib_cats_library', bucket:'library'},
+    drawing: {label:'도면 관리', icon:'📐', catKey:'hj3_lib_cats_drawing', bucket:'library'},
+    construction: {label:'시공 관리', icon:'🏗️', catKey:'hj3_lib_cats_construction', bucket:'library'},
+  };
+  const menu = MENU_INFO[storageType] || MENU_INFO.library;
+  LIBRARY_CATEGORIES = JSON.parse(localStorage.getItem(menu.catKey) || JSON.stringify(
+    storageType==='library' ? ['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타'] :
+    storageType==='drawing' ? ['골조도면','건축도면','기계도면','전기도면','토목도면','기타'] :
+    ['타설현황','검측현황','품질관리','안전관리','하자보수','기타']
+  ));
+
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">불러오는 중...</div>';
-  await loadLibraryDocs();
+  await loadLibraryDocs(storageType);
 
   const cats = libSelectedCat ? [libSelectedCat] : LIBRARY_CATEGORIES;
   const filtered = libSelectedCat ? libraryDocs.filter(d => d.category === libSelectedCat) : libraryDocs;
