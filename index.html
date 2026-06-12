@@ -2846,7 +2846,9 @@ async function saveLibraryEdit() {
       `${category} · ${new Date(doc.created_at).toLocaleDateString('ko-KR')}${memo?' · '+memo:''}`;
     closeLibraryEditModal();
     showToast('✅ 수정됐어요!');
-    renderLibraryView(document.getElementById('main-content'), currentView||'library');
+    const _stEdit = currentView||'library';
+    LIB_CAT_CACHE[_stEdit] = null; // 캐시 무효화해서 새로 로드
+    renderLibraryView(document.getElementById('main-content'), _stEdit);
   } catch(e) {
     showToast('⚠️ 수정 실패: ' + e.message);
   }
