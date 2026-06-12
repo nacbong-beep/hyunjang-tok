@@ -2524,13 +2524,37 @@ async function renderLibraryView(el, storageType='library') {
   const filtered = curCat ? libraryDocs.filter(d => d.category === curCat) : libraryDocs;
 
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start">
+    <div id="lib-layout" style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start">
+    <style>
+      @media(max-width:500px){
+        #lib-layout { grid-template-columns:1fr !important; }
+        #lib-cat-sidebar { display:none !important; }
+        #lib-cat-mobile { display:flex !important; }
+      }
+    </style>
 
-      <!-- 왼쪽: 공종 목록 -->
-      <div class="panel" style="padding:12px">
+      <!-- 모바일: 가로 스크롤 탭 -->
+      <div id="lib-cat-mobile" style="display:none;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch">
+        <button onclick="libSelectedCat['${storageType}']=null;renderLibraryView(document.getElementById('main-content'),'${storageType}')"
+          style="flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;background:${!curCat?'var(--primary)':'var(--border)'};color:${!curCat?'#fff':'var(--text)'}">
+          전체 ${libraryDocs.length}
+        </button>
+        ${LIBRARY_CATEGORIES.map(cat => {
+          const cnt = libraryDocs.filter(d=>d.category===cat).length;
+          const isActive = curCat === cat;
+          return `<button onclick="libSelectedCat['${storageType}']='${cat}';renderLibraryView(document.getElementById('main-content'),'${storageType}')"
+            style="flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;background:${isActive?'var(--primary)':'var(--border)'};color:${isActive?'#fff':'var(--text)'}">
+            ${cat} ${cnt}
+          </button>`;
+        }).join('')}
+        <button onclick="openLibraryCatManager('${storageType}')" style="flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid var(--border2);background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap">⚙️</button>
+      </div>
+
+      <!-- PC: 왼쪽 공종 목록 -->
+      <div id="lib-cat-sidebar" class="panel" style="padding:12px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <div class="panel-title" style="font-size:13px">📚 공종 분류</div>
-          <button onclick="openLibraryCatManager()" style="border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px" title="카테고리 관리">⚙️ 관리</button>
+          <button onclick="openLibraryCatManager('${storageType}')" style="border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px" title="카테고리 관리">⚙️ 관리</button>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <div onclick="libSelectedCat['${storageType}']=null;renderLibraryView(document.getElementById('main-content'),'${storageType}')"
@@ -2546,7 +2570,6 @@ async function renderLibraryView(el, storageType='library') {
             </div>`;
           }).join('')}
         </div>
-
       </div>
 
       <!-- 오른쪽: 자료 목록 -->
