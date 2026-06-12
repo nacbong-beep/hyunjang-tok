@@ -2291,6 +2291,14 @@ async function renderWeeklyView(el) {
 
 // ===== 건설라이브러리 =====
 let LIBRARY_CATEGORIES = [];
+
+// 구버전 카테고리 마이그레이션
+(function migrateLegacyCats() {
+  const legacy = localStorage.getItem('hj3_lib_cats');
+  if(legacy && !localStorage.getItem('hj3_lib_cats_library')) {
+    localStorage.setItem('hj3_lib_cats_library', legacy);
+  }
+})();
 const LIB_DEFAULT_CATS = {
   library:      ['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타'],
   drawing:      ['골조도면','건축도면','기계도면','전기도면','토목도면','기타'],
