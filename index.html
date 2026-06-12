@@ -2519,16 +2519,17 @@ async function renderLibraryView(el) {
       </div>
     </div>
 
-    <!-- 상세 보기 모달 -->
-    <div id="lib-view-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;flex-direction:column">
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(0,0,0,.5)">
+    <!-- 상세 보기 모달 (플로팅) -->
+    <div id="lib-view-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:rgba(0,0,0,.6)">
         <div>
-          <div id="lib-view-title" style="font-size:15px;font-weight:700;color:#fff"></div>
-          <div id="lib-view-meta" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px"></div>
+          <div id="lib-view-title" style="font-size:14px;font-weight:700;color:#fff"></div>
+          <div id="lib-view-meta" style="font-size:11px;color:rgba(255,255,255,.6);margin-top:2px"></div>
         </div>
         <div style="display:flex;gap:8px">
-          <button id="lib-view-delete" class="btn-ghost" style="font-size:12px;padding:6px 12px;color:#ef4444;border-color:#ef4444">🗑️ 삭제</button>
-          <button onclick="closeLibraryDoc()" style="border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.1);color:#fff;border-radius:9px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer">✕ 닫기</button>
+          <button id="lib-view-delete" class="btn-ghost" style="font-size:12px;padding:5px 10px;color:#ef4444;border-color:#ef4444">🗑️ 삭제</button>
+          <button onclick="popoutLibraryDoc()" style="border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.1);color:#fff;border-radius:9px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer" title="별도 팝업으로 열기">⧉ 팝업</button>
+          <button onclick="closeLibraryDoc()" style="border:1px solid rgba(255,255,255,.4);background:rgba(255,255,255,.1);color:#fff;border-radius:9px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">✕ 닫기</button>
         </div>
       </div>
       <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px">
@@ -2645,6 +2646,73 @@ async function openLibraryDoc(id) {
 
 function closeLibraryDoc() {
   document.getElementById('lib-view-modal').style.display = 'none';
+}
+
+// 플로팅 팝업
+let libFloatWin = null;
+
+function popoutLibraryDoc() {
+  const imgSrc = document.getElementById('lib-view-img').src;
+  const title = document.getElementById('lib-view-title').textContent;
+  const meta = document.getElementById('lib-view-meta').textContent;
+  closeLibraryDoc();
+
+  // 기존 팝업 있으면 닫기
+  if(libFloatWin && !libFloatWin.closed) libFloatWin.close();
+
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>${title}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:#1a2332; font-family:'Noto Sans KR',sans-serif; display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+  .header { background:#263448; padding:10px 14px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; cursor:move; user-select:none; }
+  .title { color:#fff; font-size:13px; font-weight:700; }
+  .meta { color:rgba(255,255,255,.5); font-size:11px; margin-top:2px; }
+  .img-wrap { flex:1; overflow:auto; display:flex; align-items:center; justify-content:center; padding:12px; }
+  img { max-width:100%; height:auto; border-radius:6px; }
+  .zoom-bar { background:#263448; padding:8px 14px; display:flex; gap:8px; align-items:center; justify-content:center; flex-shrink:0; }
+  button { border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.1); color:#fff; border-radius:6px; padding:4px 10px; font-size:12px; cursor:pointer; }
+  button:hover { background:rgba(255,255,255,.2); }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="title">${title}</div>
+      <div class="meta">${meta}</div>
+    </div>
+    <div style="color:rgba(255,255,255,.4);font-size:11px">⠿ 드래그로 이동</div>
+  </div>
+  <div class="img-wrap" id="img-wrap">
+    <img id="main-img" src="${imgSrc}" style="width:100%">
+  </div>
+  <div class="zoom-bar">
+    <button onclick="zoom(-0.2)">🔍−</button>
+    <span id="zoom-label" style="color:rgba(255,255,255,.6);font-size:11px;min-width:40px;text-align:center">100%</span>
+    <button onclick="zoom(0.2)">🔍+</button>
+    <button onclick="resetZoom()">원본</button>
+    <button onclick="fitZoom()">맞춤</button>
+  </div>
+  <script>
+    let scale = 1;
+    function zoom(delta) {
+      scale = Math.max(0.2, Math.min(5, scale + delta));
+      document.getElementById('main-img').style.width = (scale * 100) + '%';
+      document.getElementById('zoom-label').textContent = Math.round(scale * 100) + '%';
+    }
+    function resetZoom() { scale = 1; document.getElementById('main-img').style.width = '100%'; document.getElementById('zoom-label').textContent = '100%'; }
+    function fitZoom() { document.getElementById('main-img').style.width = '100%'; document.getElementById('main-img').style.maxWidth = '100%'; }
+  </script>
+</body>
+</html>`;
+
+  libFloatWin = window.open('', '_blank', 'width=900,height=700,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no');
+  libFloatWin.document.write(html);
+  libFloatWin.document.close();
+  libFloatWin.focus();
 }
 
 function renderSettingsView(el) {
