@@ -728,6 +728,7 @@ function renderSidebar() {
       ${navItem('📊','대시보드','dashboard')}
       ${navItem('📅','캘린더','calendar',calEvents.length)}
       ${navItem('📋','주간업무일지','weekly')}
+      ${navItem('📚','건설라이브러리','library')}
       ${navItem('✅','할일','todo',pending)}
       ${navItem('⚙️','설정','settings')}
       <div class="nav-item ${currentView==='search'?'active':''}" onclick="setView('search')" style="margin:4px 0;border:1px solid rgba(255,255,255,.12);border-radius:9px">
@@ -770,7 +771,7 @@ function setView(v) {
   currentView = v;
   closeSidebar();
   if(v.startsWith('cat_')) { selectedCategory=v.replace('cat_',''); currentView='search'; }
-  const titles = {dashboard:'대시보드',calendar:'캘린더',weekly:'주간업무일지',todo:'할일',search:'검색',input:'메시지 입력',settings:'설정'};
+  const titles = {dashboard:'대시보드',calendar:'캘린더',weekly:'주간업무일지',library:'건설라이브러리',todo:'할일',search:'검색',input:'메시지 입력',settings:'설정'};
   document.getElementById('header-title').textContent = titles[v]||(v.startsWith('cat_')?v.replace('cat_','')+'  검색':v);
   const guideEl = document.getElementById('header-guide');
   if(guideEl) guideEl.style.display = (currentView==='dashboard') ? 'block' : 'none';
@@ -782,6 +783,7 @@ function setView(v) {
   else if(currentView==='search') renderSearchView(el);
   else if(currentView==='input') renderInputView(el);
   else if(currentView==='weekly') renderWeeklyView(el);
+  else if(currentView==='library') renderLibraryView(el);
   else if(currentView==='settings') renderSettingsView(el);
   else if(currentView.startsWith('room_')) {
     renderRoomView(el,v);
@@ -2262,6 +2264,298 @@ async function renderWeeklyView(el) {
       </div>
       <div style="margin-top:10px;font-size:11px;color:var(--soft)">※ 셀 클릭 시 편집 가능 · 자동 저장</div>
     </div>`;
+}
+
+// ===== 건설라이브러리 =====
+const LIBRARY_CATEGORIES = ['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타'];
+let libraryDocs = [];
+let libSelectedCat = null;
+let libViewDoc = null;
+
+async function loadLibraryDocs() {
+  try {
+    const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/library_docs?select=*&order=created_at.desc`, {
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
+    });
+    if(res.ok) libraryDocs = await res.json();
+  } catch(e) { console.warn('library load error', e); }
+}
+
+async function uploadLibraryFile(file, category, title, memo) {
+  const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+  const ext = file.name.split('.').pop() || 'png';
+  const filePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+
+  // Supabase Storage 업로드
+  const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/library/${filePath}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': file.type },
+    body: file
+  });
+  if(!uploadRes.ok) throw new Error('업로드 실패');
+
+  // DB에 메타데이터 저장
+  const dbRes = await fetch(`${SUPABASE_URL}/rest/v1/library_docs`, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({ category, title, memo, file_path: filePath, file_name: file.name })
+  });
+  if(!dbRes.ok) throw new Error('DB 저장 실패');
+  return await dbRes.json();
+}
+
+async function getLibraryFileUrl(filePath) {
+  const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/sign/library/${filePath}`, {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ expiresIn: 3600 })
+  });
+  if(!res.ok) return null;
+  const data = await res.json();
+  return `${SUPABASE_URL}/storage/v1${data.signedURL}`;
+}
+
+async function deleteLibraryDoc(id, filePath) {
+  if(!confirm('이 자료를 삭제할까요?')) return;
+  const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+  await fetch(`${SUPABASE_URL}/storage/v1/object/library/${filePath}`, {
+    method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
+  });
+  await fetch(`${SUPABASE_URL}/rest/v1/library_docs?id=eq.${id}`, {
+    method: 'DELETE', headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
+  });
+  libraryDocs = libraryDocs.filter(d => d.id !== id);
+  libViewDoc = null;
+  showToast('🗑️ 삭제됐어요');
+  renderLibraryView(document.getElementById('main-content'));
+}
+
+async function renderLibraryView(el) {
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">불러오는 중...</div>';
+  await loadLibraryDocs();
+
+  const cats = libSelectedCat ? [libSelectedCat] : LIBRARY_CATEGORIES;
+  const filtered = libSelectedCat ? libraryDocs.filter(d => d.category === libSelectedCat) : libraryDocs;
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start">
+
+      <!-- 왼쪽: 공종 목록 -->
+      <div class="panel" style="padding:12px">
+        <div class="panel-title" style="margin-bottom:12px;font-size:13px">📚 공종 분류</div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <div onclick="libSelectedCat=null;renderLibraryView(document.getElementById('main-content'))"
+            class="nav-item ${!libSelectedCat?'active':''}"
+            style="border-radius:8px;font-size:13px;color:${!libSelectedCat?'#fff':'var(--text)'}">
+            전체 <span style="margin-left:auto;font-size:11px;opacity:.7">${libraryDocs.length}</span>
+          </div>
+          ${LIBRARY_CATEGORIES.map(cat => {
+            const cnt = libraryDocs.filter(d=>d.category===cat).length;
+            const isActive = libSelectedCat === cat;
+            return `<div onclick="libSelectedCat='${cat}';renderLibraryView(document.getElementById('main-content'))"
+              class="nav-item ${isActive?'active':''}"
+              style="border-radius:8px;font-size:13px;color:${isActive?'#fff':'var(--text)'}">
+              ${cat} <span style="margin-left:auto;font-size:11px;opacity:.7">${cnt}</span>
+            </div>`;
+          }).join('')}
+        </div>
+        <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:12px">
+          <button onclick="openLibraryUpload()" class="btn-primary" style="width:100%;font-size:12px;padding:8px">+ 자료 추가</button>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 자료 목록 -->
+      <div>
+        <!-- 드롭존 -->
+        <div id="lib-dropzone" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+          ondragleave="this.style.borderColor='var(--border2)'"
+          ondrop="handleLibraryDrop(event)"
+          style="border:2px dashed var(--border2);border-radius:var(--radius);padding:20px;text-align:center;background:var(--card);margin-bottom:16px;cursor:pointer;transition:border-color 0.15s"
+          onclick="document.getElementById('lib-file-input').click()">
+          <div style="font-size:24px;margin-bottom:6px">📎</div>
+          <div style="font-size:13px;font-weight:700;color:var(--muted)">이미지를 드래그하거나 클릭해서 업로드</div>
+          <div style="font-size:11px;color:var(--soft);margin-top:4px">카톡에서 복사(Ctrl+C) 후 아래 붙여넣기 버튼 사용</div>
+          <button onclick="event.stopPropagation();openLibraryPaste()" class="btn-ghost" style="margin-top:10px;font-size:12px;padding:6px 14px">📋 클립보드에서 붙여넣기</button>
+        </div>
+        <input type="file" id="lib-file-input" accept="image/*" style="display:none" onchange="handleLibraryFileSelect(this.files[0])">
+
+        <!-- 자료 그리드 -->
+        ${filtered.length === 0
+          ? '<div class="empty-box"><div class="empty-icon">📂</div><div class="empty-text">자료가 없습니다. 이미지를 업로드해주세요.</div></div>'
+          : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+              ${filtered.map(doc => `
+                <div class="panel" style="padding:0;overflow:hidden;cursor:pointer;transition:all 0.2s"
+                  onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow2)'"
+                  onmouseout="this.style.transform='';this.style.boxShadow=''"
+                  onclick="openLibraryDoc('${doc.id}')">
+                  <div style="height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;position:relative">
+                    <img src="" data-path="${doc.file_path}" class="lib-thumb"
+                      style="width:100%;height:100%;object-fit:cover;display:none"
+                      onload="this.style.display='block';this.previousElementSibling.style.display='none'">
+                    <div style="font-size:32px">📄</div>
+                  </div>
+                  <div style="padding:10px 12px">
+                    <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:3px">${doc.category}</div>
+                    <div style="font-size:13px;font-weight:700;line-height:1.4;color:var(--text)">${doc.title}</div>
+                    <div style="font-size:11px;color:var(--soft);margin-top:4px">${new Date(doc.created_at).toLocaleDateString('ko-KR')}</div>
+                    ${doc.memo?`<div style="font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${doc.memo}</div>`:''}
+                  </div>
+                </div>`).join('')}
+            </div>`
+        }
+      </div>
+    </div>
+
+    <!-- 업로드 모달 -->
+    <div id="lib-upload-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+      <div class="modal" style="max-width:420px">
+        <div class="modal-title">📎 자료 추가</div>
+        <div id="lib-preview" style="height:140px;background:var(--bg);border-radius:8px;margin-bottom:12px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <span style="color:var(--soft);font-size:13px">이미지 미리보기</span>
+        </div>
+        <select class="modal-input" id="lib-cat-input">
+          ${LIBRARY_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <input class="modal-input" id="lib-title-input" placeholder="자료 제목 (예: 26.06.08 골조타설 예정일 공정표)">
+        <textarea class="modal-input" id="lib-memo-input" placeholder="메모 (선택사항)" style="min-height:60px;resize:vertical"></textarea>
+        <div class="modal-actions">
+          <button class="btn-ghost" style="flex:1" onclick="closeLibraryUpload()">취소</button>
+          <button class="btn-primary" style="flex:2" onclick="saveLibraryDoc()">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 상세 보기 모달 -->
+    <div id="lib-view-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:1000;flex-direction:column">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;background:rgba(0,0,0,.5)">
+        <div>
+          <div id="lib-view-title" style="font-size:15px;font-weight:700;color:#fff"></div>
+          <div id="lib-view-meta" style="font-size:12px;color:rgba(255,255,255,.6);margin-top:2px"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button id="lib-view-delete" class="btn-ghost" style="font-size:12px;padding:6px 12px;color:#ef4444;border-color:#ef4444">🗑️ 삭제</button>
+          <button onclick="closeLibraryDoc()" class="btn-ghost" style="font-size:12px;padding:6px 12px;color:#fff;border-color:rgba(255,255,255,.3)">✕ 닫기</button>
+        </div>
+      </div>
+      <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:20px">
+        <img id="lib-view-img" src="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px">
+      </div>
+    </div>`;
+
+  // 썸네일 지연 로드
+  setTimeout(() => loadLibraryThumbs(), 100);
+}
+
+async function loadLibraryThumbs() {
+  const imgs = document.querySelectorAll('.lib-thumb');
+  for(const img of imgs) {
+    const path = img.dataset.path;
+    if(!path) continue;
+    const url = await getLibraryFileUrl(path);
+    if(url) img.src = url;
+  }
+}
+
+let libPendingFile = null;
+
+function openLibraryUpload(file) {
+  libPendingFile = file || null;
+  const modal = document.getElementById('lib-upload-modal');
+  modal.style.display = 'flex';
+  if(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('lib-preview');
+      preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:contain">`;
+    };
+    reader.readAsDataURL(file);
+  }
+  if(libSelectedCat) document.getElementById('lib-cat-input').value = libSelectedCat;
+  // 날짜 기본 제목
+  const today = new Date();
+  document.getElementById('lib-title-input').value = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')} `;
+  setTimeout(() => document.getElementById('lib-title-input').focus(), 100);
+}
+
+function closeLibraryUpload() {
+  document.getElementById('lib-upload-modal').style.display = 'none';
+  libPendingFile = null;
+}
+
+function handleLibraryFileSelect(file) {
+  if(!file) return;
+  openLibraryUpload(file);
+}
+
+function handleLibraryDrop(e) {
+  e.preventDefault();
+  document.getElementById('lib-dropzone').style.borderColor = 'var(--border2)';
+  const file = e.dataTransfer.files[0];
+  if(file && file.type.startsWith('image/')) openLibraryUpload(file);
+  else showToast('이미지 파일만 업로드 가능해요');
+}
+
+async function openLibraryPaste() {
+  try {
+    const items = await navigator.clipboard.read();
+    for(const item of items) {
+      for(const type of item.types) {
+        if(type.startsWith('image/')) {
+          const blob = await item.getType(type);
+          const file = new File([blob], `paste_${Date.now()}.png`, {type});
+          openLibraryUpload(file);
+          return;
+        }
+      }
+    }
+    showToast('클립보드에 이미지가 없어요. 카톡에서 이미지를 복사 후 시도해주세요.');
+  } catch(e) {
+    showToast('붙여넣기 권한이 필요해요. 브라우저에서 허용해주세요.');
+  }
+}
+
+async function saveLibraryDoc() {
+  const category = document.getElementById('lib-cat-input').value;
+  const title = document.getElementById('lib-title-input').value.trim();
+  const memo = document.getElementById('lib-memo-input').value.trim();
+  if(!title) { showToast('제목을 입력해주세요'); return; }
+  if(!libPendingFile) { showToast('이미지를 선택해주세요'); return; }
+
+  const btn = document.querySelector('#lib-upload-modal .btn-primary');
+  btn.textContent = '저장 중...'; btn.disabled = true;
+
+  try {
+    await uploadLibraryFile(libPendingFile, category, title, memo);
+    showToast('✅ 저장됐어요!');
+    closeLibraryUpload();
+    renderLibraryView(document.getElementById('main-content'));
+  } catch(e) {
+    showToast('⚠️ 저장 실패: ' + e.message);
+  }
+  btn.textContent = '저장'; btn.disabled = false;
+}
+
+async function openLibraryDoc(id) {
+  const doc = libraryDocs.find(d => d.id === id);
+  if(!doc) return;
+  const modal = document.getElementById('lib-view-modal');
+  modal.style.display = 'flex';
+  document.getElementById('lib-view-title').textContent = doc.title;
+  document.getElementById('lib-view-meta').textContent =
+    `${doc.category} · ${new Date(doc.created_at).toLocaleDateString('ko-KR')}${doc.memo?' · '+doc.memo:''}`;
+  document.getElementById('lib-view-img').src = '';
+  document.getElementById('lib-view-delete').onclick = () => deleteLibraryDoc(doc.id, doc.file_path);
+  const url = await getLibraryFileUrl(doc.file_path);
+  if(url) document.getElementById('lib-view-img').src = url;
+}
+
+function closeLibraryDoc() {
+  document.getElementById('lib-view-modal').style.display = 'none';
 }
 
 function renderSettingsView(el) {
