@@ -2742,12 +2742,14 @@ async function saveLibraryDoc() {
   const title = document.getElementById('lib-title-input').value.trim();
   const filename = document.getElementById('lib-filename-input').value.trim();
   const memo = document.getElementById('lib-memo-input').value.trim();
-  if(!title) { showToast('제목을 입력해주세요'); return; }
+  // 제목과 파일명 중 하나만 있어도 됨
+  const finalTitle = title || filename;
+  const finalFilename = filename || title;
+  if(!finalTitle) { showToast('제목 또는 파일명을 입력해주세요'); return; }
   if(!libPendingFile) { showToast('이미지를 선택해주세요'); return; }
-  // 파일명이 있으면 file 객체의 name을 override
-  if(filename) {
+  if(finalFilename) {
     const ext = libPendingFile.name.split('.').pop();
-    libPendingFile = new File([libPendingFile], filename + '.' + ext, {type: libPendingFile.type});
+    libPendingFile = new File([libPendingFile], finalFilename + '.' + ext, {type: libPendingFile.type});
   }
 
   const btn = document.querySelector('#lib-upload-modal .btn-primary');
@@ -2755,7 +2757,7 @@ async function saveLibraryDoc() {
 
   try {
     const _st = currentView||'library';
-    await uploadLibraryFile(libPendingFile, category, title, memo, _st);
+    await uploadLibraryFile(libPendingFile, category, finalTitle, memo, _st);
     showToast('✅ 저장됐어요!');
     closeLibraryUpload();
     renderLibraryView(document.getElementById('main-content'), _st);
