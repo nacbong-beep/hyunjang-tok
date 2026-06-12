@@ -281,10 +281,19 @@ a{color:inherit;text-decoration:none}
 @media(max-width:480px){
   .dashboard-summary{grid-template-columns:1fr 1fr;gap:8px}
   .summary-card{padding:10px 8px}
-  .card-num{font-size:22px}
-  .summary-card-icon{font-size:16px;margin-bottom:4px}
-  .header-title{max-width:60px;font-size:12px}
-  .btn-primary{padding:6px 8px;font-size:11px}
+  .card-num{font-size:20px}
+  .summary-card-icon{font-size:14px;margin-bottom:4px}
+  .card-hint{display:none}
+  .header-title{max-width:80px;font-size:12px}
+  .btn-primary{padding:5px 8px;font-size:11px}
+  .panel{padding:10px}
+  .modal{padding:18px}
+}
+@media(max-width:380px){
+  .header-title{max-width:60px;font-size:11px}
+  .dashboard-summary{grid-template-columns:1fr 1fr;gap:6px}
+  .card-num{font-size:18px}
+  .summary-card{padding:8px 6px}
 }
 </style>
 </head>
@@ -2285,7 +2294,7 @@ async function renderWeeklyView(el) {
           </tbody>
         </table>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--soft)">※ 셀 클릭 시 편집 가능 · 자동 저장</div>
+      <div style="margin-top:10px;font-size:11px;color:var(--soft)">※ 셀 클릭 시 편집 가능 · 자동 저장 · 모바일에서는 좌우로 스크롤하세요</div>
     </div>`;
 }
 
@@ -2494,7 +2503,8 @@ async function renderLibraryView(el, storageType='library') {
   const filtered = curCat ? libraryDocs.filter(d => d.category === curCat) : libraryDocs;
 
   el.innerHTML = `
-    <div style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start">
+    <div id="lib-layout" style="display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start">
+    <style>@media(max-width:500px){#lib-layout{grid-template-columns:1fr!important;}}</style>
 
       <!-- 왼쪽: 공종 목록 -->
       <div class="panel" style="padding:12px">
