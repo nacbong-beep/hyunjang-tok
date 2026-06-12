@@ -13,6 +13,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -2007,6 +2008,146 @@ async function aiDraftWeekly() {
   btn.textContent = '🤖 AI 자동작성'; btn.disabled = false;
 }
 
+function toggleWeeklySearch() {
+  const bar = document.getElementById('weekly-search-bar');
+  const isOpen = bar.style.display !== 'none';
+  bar.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen) {
+    setTimeout(() => document.getElementById('weekly-search-input').focus(), 50);
+    document.getElementById('weekly-search-results').innerHTML = '';
+    document.getElementById('weekly-search-input').value = '';
+  }
+}
+
+function searchWeeklyAll(q) {
+  const el = document.getElementById('weekly-search-results');
+  if(!q.trim()) { el.innerHTML = ''; return; }
+
+  const rows = ['작업사항','검측사항','확인사항','서류사항','기타'];
+  const results = [];
+
+  // weeklyData 전체 순회
+  Object.keys(weeklyData).sort((a,b)=>b.localeCompare(a)).forEach(wk => {
+    const weekEntries = weeklyData[wk];
+    Object.keys(weekEntries).forEach(key => {
+      const val = weekEntries[key];
+      if(!val || !val.toLowerCase().includes(q.toLowerCase())) return;
+      const [row, dateKey] = key.split(':');
+      const d = new Date(dateKey);
+      const days = ['일','월','화','수','목','금','토'];
+      const dateLabel = `${d.getMonth()+1}/${d.getDate()}(${days[d.getDay()]})`;
+      // wk는 해당 주 월요일 날짜
+      const monD = new Date(wk);
+      const satD = new Date(wk); satD.setDate(monD.getDate()+5);
+      const weekLabel = `${monD.getFullYear()}년 ${monD.getMonth()+1}월 ${monD.getDate()}일 주`;
+      results.push({wk, weekLabel, row, dateKey, dateLabel, val});
+    });
+  });
+
+  if(!results.length) {
+    el.innerHTML = '<div class="empty-box" style="margin-top:0">검색 결과가 없습니다.</div>';
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">${results.length}건 검색됨</div>
+    ${results.map(r => {
+      const highlighted = r.val.replace(
+        new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'),
+        match => `<mark style="background:#fef08a;color:#1a2332;border-radius:2px;padding:0 2px">${match}</mark>`
+      );
+      return `<div class="item" style="cursor:pointer;margin-bottom:8px" onclick="goToWeek('${r.wk}')">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span class="badge b-blue">${r.row}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--primary)">${r.dateLabel}</span>
+          <span style="font-size:11px;color:var(--soft)">${r.weekLabel}</span>
+        </div>
+        <div style="font-size:13px;line-height:1.6;color:var(--text)">${highlighted}</div>
+      </div>`;
+    }).join('')}`;
+}
+
+function goToWeek(wk) {
+  // 해당 주로 이동
+  const mon = new Date(wk);
+  const today = new Date();
+  const todayMon = new Date(today);
+  const day = today.getDay();
+  todayMon.setDate(today.getDate() - (day===0?6:day-1));
+  todayMon.setHours(0,0,0,0);
+  const diffMs = mon - todayMon;
+  const diffWeeks = Math.round(diffMs / (7*24*60*60*1000));
+  weeklyOffset = diffWeeks;
+  toggleWeeklySearch();
+  renderWeeklyView(document.getElementById('main-content'));
+  showToast(`📅 ${mon.getMonth()+1}월 ${mon.getDate()}일 주로 이동했어요`);
+}
+
+async function shareWeeklyImage() {
+  const btn = document.querySelector('button[onclick="shareWeeklyImage()"]');
+  const origText = btn.textContent;
+  btn.textContent = '생성 중...';
+  btn.disabled = true;
+
+  const {mon, sat} = getWeekRange(weeklyOffset);
+  const title = formatWeekDate(mon) + ' ~ ' + formatWeekDate(sat);
+
+  // 캡처할 테이블 영역
+  const table = document.querySelector('#main-content table');
+  if(!table) { showToast('표를 찾을 수 없어요'); btn.textContent = origText; btn.disabled = false; return; }
+
+  try {
+    // 임시 래퍼 생성 (제목 + 표)
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'background:#fff;padding:20px 24px;display:inline-block;min-width:800px;font-family:Noto Sans KR,sans-serif;';
+    
+    const titleEl = document.createElement('div');
+    titleEl.style.cssText = 'font-size:16px;font-weight:900;color:#1a2332;margin-bottom:4px;';
+    titleEl.textContent = '주간업무일지';
+    
+    const subEl = document.createElement('div');
+    subEl.style.cssText = 'font-size:12px;color:#64748b;margin-bottom:16px;';
+    subEl.textContent = title + (appSettings.siteName ? '  ·  ' + appSettings.siteName : '');
+
+    const tableClone = table.cloneNode(true);
+    tableClone.style.cssText = 'width:100%;border-collapse:collapse;border:1px solid #e8e4de;';
+    
+    // 텍스트 영역을 div로 변환 (캡처 시 textarea 내용 보이게)
+    tableClone.querySelectorAll('textarea').forEach(ta => {
+      const div = document.createElement('div');
+      div.style.cssText = 'font-size:12px;line-height:1.6;color:#1a2332;padding:8px;min-height:72px;white-space:pre-wrap;word-break:break-all;';
+      div.textContent = ta.value;
+      ta.parentNode.replaceChild(div, ta);
+    });
+
+    wrapper.appendChild(titleEl);
+    wrapper.appendChild(subEl);
+    wrapper.appendChild(tableClone);
+    document.body.appendChild(wrapper);
+
+    const canvas = await html2canvas(wrapper, {
+      scale: 2,
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+    });
+    document.body.removeChild(wrapper);
+
+    // 다운로드
+    const wk = weekKey(weeklyOffset);
+    const link = document.createElement('a');
+    link.download = '주간업무일지_' + wk + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('🖼️ 이미지 저장 완료!');
+  } catch(e) {
+    console.error(e);
+    showToast('⚠️ 이미지 생성 실패');
+  }
+  btn.textContent = origText;
+  btn.disabled = false;
+}
+
 function exportWeeklyExcel() {
   const wk = weekKey(weeklyOffset);
   const days = getWeekDays(weeklyOffset);
@@ -2069,10 +2210,21 @@ async function renderWeeklyView(el) {
           <button onclick="weeklyOffset=0;renderWeeklyView(document.getElementById('main-content'))" class="btn-ghost" style="padding:5px 10px;font-size:12px">이번주</button>
         </div>
         <div style="display:flex;gap:8px">
-          <button id="weekly-ai-btn" onclick="aiDraftWeekly()" class="btn-primary" style="background:#7c3aed;padding:7px 14px;font-size:12px">✨ AI 자동작성</button>
           <button onclick="exportWeeklyExcel()" class="btn-ghost" style="padding:7px 12px;font-size:12px">📥 엑셀</button>
           <button onclick="copyWeeklyText()" class="btn-ghost" style="padding:7px 12px;font-size:12px">📋 복사</button>
+          <button onclick="shareWeeklyImage()" class="btn-ghost" style="padding:7px 12px;font-size:12px">🖼️ 이미지</button>
+          <button onclick="toggleWeeklySearch()" class="btn-ghost" style="padding:7px 12px;font-size:12px">🔍 검색</button>
         </div>
+      </div>
+      <div id="weekly-search-bar" style="display:none;padding:0 0 14px">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input id="weekly-search-input" class="search-input" placeholder="검색어 입력 (예: 302동, 방수, 검측...)"
+            oninput="searchWeeklyAll(this.value)"
+            onkeydown="if(event.key==='Escape')toggleWeeklySearch()"
+            style="flex:1;padding:10px 14px;font-size:13px">
+          <button onclick="toggleWeeklySearch()" class="btn-ghost" style="padding:8px 12px;font-size:12px">닫기</button>
+        </div>
+        <div id="weekly-search-results" style="margin-top:10px"></div>
       </div>
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse">
