@@ -2267,10 +2267,73 @@ async function renderWeeklyView(el) {
 }
 
 // ===== 건설라이브러리 =====
-const LIBRARY_CATEGORIES = ['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타'];
+let LIBRARY_CATEGORIES = JSON.parse(localStorage.getItem('hj3_lib_cats') || JSON.stringify(['골조공사','유리공사','내장공사','PVC창호공사','방수공사','철근공사','기타']));
 let libraryDocs = [];
 let libSelectedCat = null;
 let libViewDoc = null;
+
+// ===== 카테고리 관리 =====
+let libCatDraft = [];
+
+function openLibraryCatManager() {
+  libCatDraft = [...LIBRARY_CATEGORIES];
+  renderLibraryCatList();
+  document.getElementById('lib-cat-modal').style.display = 'flex';
+  document.getElementById('lib-cat-new-input').value = '';
+}
+
+function closeLibraryCatManager() {
+  document.getElementById('lib-cat-modal').style.display = 'none';
+}
+
+function renderLibraryCatList() {
+  const el = document.getElementById('lib-cat-list');
+  el.innerHTML = libCatDraft.map((cat, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--border);border-radius:8px;background:var(--card)">
+      <span style="font-size:14px;color:var(--soft);cursor:grab">⠿</span>
+      <input value="${cat}" onchange="libCatDraft[${i}]=this.value"
+        style="flex:1;border:none;background:transparent;font-size:13px;color:var(--text);outline:none;font-family:inherit">
+      <button onclick="moveLibraryCat(${i},-1)" ${i===0?'disabled':''} style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer;color:var(--muted)">↑</button>
+      <button onclick="moveLibraryCat(${i},1)" ${i===libCatDraft.length-1?'disabled':''} style="border:1px solid var(--border2);background:var(--card);border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer;color:var(--muted)">↓</button>
+      <button onclick="deleteLibraryCat(${i})" style="border:1px solid #fecaca;background:#fff;color:#ef4444;border-radius:5px;width:24px;height:24px;font-size:11px;cursor:pointer">✕</button>
+    </div>`).join('');
+}
+
+function addLibraryCat() {
+  const val = document.getElementById('lib-cat-new-input').value.trim();
+  if(!val) { showToast('공종명을 입력해주세요'); return; }
+  if(libCatDraft.includes(val)) { showToast('이미 있는 공종이에요'); return; }
+  libCatDraft.push(val);
+  document.getElementById('lib-cat-new-input').value = '';
+  renderLibraryCatList();
+}
+
+function deleteLibraryCat(i) {
+  if(!confirm(`"${libCatDraft[i]}" 공종을 삭제할까요?
+(해당 공종의 자료는 삭제되지 않아요)`)) return;
+  libCatDraft.splice(i, 1);
+  renderLibraryCatList();
+}
+
+function moveLibraryCat(i, dir) {
+  const j = i + dir;
+  if(j < 0 || j >= libCatDraft.length) return;
+  [libCatDraft[i], libCatDraft[j]] = [libCatDraft[j], libCatDraft[i]];
+  renderLibraryCatList();
+}
+
+function saveLibraryCats() {
+  // 현재 입력값 동기화
+  document.querySelectorAll('#lib-cat-list input').forEach((inp, i) => {
+    if(inp.value.trim()) libCatDraft[i] = inp.value.trim();
+  });
+  libCatDraft = libCatDraft.filter(c => c.trim());
+  LIBRARY_CATEGORIES = [...libCatDraft];
+  localStorage.setItem('hj3_lib_cats', JSON.stringify(LIBRARY_CATEGORIES));
+  closeLibraryCatManager();
+  showToast('✅ 공종 분류가 저장됐어요!');
+  renderLibraryView(document.getElementById('main-content'));
+}
 
 async function loadLibraryDocs() {
   try {
@@ -2354,7 +2417,10 @@ async function renderLibraryView(el) {
 
       <!-- 왼쪽: 공종 목록 -->
       <div class="panel" style="padding:12px">
-        <div class="panel-title" style="margin-bottom:12px;font-size:13px">📚 공종 분류</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div class="panel-title" style="font-size:13px">📚 공종 분류</div>
+          <button onclick="openLibraryCatManager()" style="border:none;background:none;color:var(--muted);font-size:11px;cursor:pointer;padding:2px 6px;border-radius:4px" title="카테고리 관리">⚙️ 관리</button>
+        </div>
         <div style="display:flex;flex-direction:column;gap:4px">
           <div onclick="libSelectedCat=null;renderLibraryView(document.getElementById('main-content'))"
             class="nav-item ${!libSelectedCat?'active':''}"
@@ -2415,6 +2481,22 @@ async function renderLibraryView(el) {
                 </div>`).join('')}
             </div>`
         }
+      </div>
+    </div>
+
+    <!-- 카테고리 관리 모달 -->
+    <div id="lib-cat-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1001;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+      <div class="modal" style="max-width:380px">
+        <div class="modal-title">⚙️ 공종 분류 관리</div>
+        <div id="lib-cat-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:320px;overflow-y:auto"></div>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <input id="lib-cat-new-input" class="modal-input" placeholder="새 공종명 입력" style="margin-bottom:0;flex:1">
+          <button onclick="addLibraryCat()" class="btn-primary" style="padding:9px 14px;font-size:13px;white-space:nowrap">+ 추가</button>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-ghost" style="flex:1" onclick="closeLibraryCatManager()">닫기</button>
+          <button class="btn-primary" style="flex:2" onclick="saveLibraryCats()">저장</button>
+        </div>
       </div>
     </div>
 
