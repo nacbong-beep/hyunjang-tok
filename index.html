@@ -2314,12 +2314,12 @@ let libViewDoc = null;
 // ===== 카테고리 관리 =====
 let libCatDraft = [];
 
+let _libCatStorageType = 'library';
 function openLibraryCatManager(storageType) {
+  _libCatStorageType = storageType || currentView || 'library';
   libCatDraft = [...LIBRARY_CATEGORIES];
   renderLibraryCatList();
-  const modal = document.getElementById('lib-cat-modal');
-  modal.style.display = 'flex';
-  modal.dataset.storageType = storageType || currentView || 'library';
+  document.getElementById('lib-cat-modal').style.display = 'flex';
   document.getElementById('lib-cat-new-input').value = '';
 }
 
@@ -2370,8 +2370,7 @@ async function saveLibraryCats() {
   });
   libCatDraft = libCatDraft.filter(c => c.trim());
   LIBRARY_CATEGORIES = [...libCatDraft];
-  const _catModal = document.getElementById('lib-cat-modal');
-  const docType = _catModal.dataset.storageType || currentView || 'library';
+  const docType = _libCatStorageType || currentView || 'library';
   await saveLibraryCatsToSupabase(docType, LIBRARY_CATEGORIES);
   closeLibraryCatManager();
   showToast('✅ 공종 분류가 저장됐어요!');
