@@ -2696,7 +2696,7 @@ function popoutLibraryDoc() {
     <button onclick="resetZoom()">원본</button>
     <button onclick="fitZoom()">맞춤</button>
   </div>
-  <script>
+  <scr' + 'ipt>
     let scale = 1;
     function zoom(delta) {
       scale = Math.max(0.2, Math.min(5, scale + delta));
@@ -2705,9 +2705,9 @@ function popoutLibraryDoc() {
     }
     function resetZoom() { scale = 1; document.getElementById('main-img').style.width = '100%'; document.getElementById('zoom-label').textContent = '100%'; }
     function fitZoom() { document.getElementById('main-img').style.width = '100%'; document.getElementById('main-img').style.maxWidth = '100%'; }
-  </script>
-</body>
-</html>`;
+  <\/script>
+<\/body>
+<\/html>`;
 
   libFloatWin = window.open('', '_blank', 'width=900,height=700,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no');
   libFloatWin.document.write(html);
