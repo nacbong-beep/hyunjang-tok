@@ -2382,7 +2382,7 @@ async function loadLibraryDocs(storageType='library') {
   } catch(e) { console.warn('library load error', e); }
 }
 
-async function uploadLibraryFile(file, category, title, memo) {
+async function uploadLibraryFile(file, category, title, memo, storageType='library') {
   const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
   const ext = file.name.split('.').pop() || 'png';
   const filePath = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
@@ -2409,7 +2409,7 @@ async function uploadLibraryFile(file, category, title, memo) {
       'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json', 'Prefer': 'return=representation'
     },
-    body: JSON.stringify({ category, title, memo, file_path: filePath, file_name: file.name, user_id: userId, doc_type: currentView||'library' })
+    body: JSON.stringify({ category, title, memo, file_path: filePath, file_name: file.name, user_id: userId, doc_type: storageType })
   });
   if(!dbRes.ok) throw new Error('DB 저장 실패');
   return await dbRes.json();
@@ -2685,7 +2685,7 @@ async function saveLibraryDoc() {
   btn.textContent = '저장 중...'; btn.disabled = true;
 
   try {
-    await uploadLibraryFile(libPendingFile, category, title, memo);
+    await uploadLibraryFile(libPendingFile, category, title, memo, currentView||'library');
     showToast('✅ 저장됐어요!');
     closeLibraryUpload();
     renderLibraryView(document.getElementById('main-content'));
