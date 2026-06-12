@@ -2571,6 +2571,9 @@ async function renderLibraryView(el, storageType='library') {
         <select class="modal-input" id="lib-cat-input">
           ${LIBRARY_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
         </select>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">파일명 <span style="font-weight:400;color:var(--soft)">(저장될 이름)</span></label>
+        <input class="modal-input" id="lib-filename-input" placeholder="파일명" style="margin-bottom:8px">
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">제목 <span style="font-weight:400;color:var(--soft)">(표시되는 이름)</span></label>
         <input class="modal-input" id="lib-title-input" placeholder="자료 제목 (예: 26.06.08 골조타설 예정일 공정표)">
         <textarea class="modal-input" id="lib-memo-input" placeholder="메모 (선택사항)" style="min-height:60px;resize:vertical"></textarea>
         <div class="modal-actions">
@@ -2613,9 +2616,18 @@ function openLibraryUpload(file) {
   }
   const _curCat = libSelectedCat[currentView] || null;
   if(_curCat) document.getElementById('lib-cat-input').value = _curCat;
-  // 날짜 기본 제목
+  // 파일명/제목 기본값 설정
   const today = new Date();
-  document.getElementById('lib-title-input').value = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')} `;
+  const todayStr = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+  if(file) {
+    // 실제 파일명에서 확장자 제거
+    const rawName = file.name.replace(/\.[^/.]+$/, '');
+    document.getElementById('lib-filename-input').value = rawName;
+    document.getElementById('lib-title-input').value = rawName;
+  } else {
+    document.getElementById('lib-filename-input').value = '';
+    document.getElementById('lib-title-input').value = todayStr + ' ';
+  }
   setTimeout(() => document.getElementById('lib-title-input').focus(), 100);
 }
 
@@ -2659,9 +2671,15 @@ async function openLibraryPaste() {
 async function saveLibraryDoc() {
   const category = document.getElementById('lib-cat-input').value;
   const title = document.getElementById('lib-title-input').value.trim();
+  const filename = document.getElementById('lib-filename-input').value.trim();
   const memo = document.getElementById('lib-memo-input').value.trim();
   if(!title) { showToast('제목을 입력해주세요'); return; }
   if(!libPendingFile) { showToast('이미지를 선택해주세요'); return; }
+  // 파일명이 있으면 file 객체의 name을 override
+  if(filename) {
+    const ext = libPendingFile.name.split('.').pop();
+    libPendingFile = new File([libPendingFile], filename + '.' + ext, {type: libPendingFile.type});
+  }
 
   const btn = document.querySelector('#lib-upload-modal .btn-primary');
   btn.textContent = '저장 중...'; btn.disabled = true;
