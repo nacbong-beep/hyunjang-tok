@@ -2313,6 +2313,7 @@ async function renderWeeklyView(el) {
 
 // ===== 건설라이브러리 =====
 let LIBRARY_CATEGORIES = [];
+let _libCatStorageType = 'library';
 // storageType별 카테고리 캐시
 const LIB_CAT_CACHE = {library:null, drawing:null, construction:null};
 
@@ -2334,7 +2335,8 @@ let libViewDoc = null;
 // ===== 카테고리 관리 =====
 let libCatDraft = [];
 
-function openLibraryCatManager() {
+function openLibraryCatManager(storageType) {
+  _libCatStorageType = storageType || currentView || 'library';
   libCatDraft = [...LIBRARY_CATEGORIES];
   renderLibraryCatList();
   document.getElementById('lib-cat-modal').style.display = 'flex';
