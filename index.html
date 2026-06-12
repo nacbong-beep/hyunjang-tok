@@ -2295,6 +2295,8 @@ async function renderWeeklyView(el) {
 
 // ===== 건설라이브러리 =====
 let LIBRARY_CATEGORIES = [];
+// storageType별 카테고리 캐시
+const LIB_CAT_CACHE = {library:null, drawing:null, construction:null};
 
 
 const LIB_DEFAULT_CATS = {
@@ -2368,7 +2370,9 @@ async function saveLibraryCats() {
   });
   libCatDraft = libCatDraft.filter(c => c.trim());
   LIBRARY_CATEGORIES = [...libCatDraft];
-  const docType = currentView || 'library';
+  const docType = _libCatStorageType || currentView || 'library';
+  // 캐시 즉시 업데이트 (renderLibraryView가 덮어쓰지 않도록)
+  LIB_CAT_CACHE[docType] = [...LIBRARY_CATEGORIES];
   await saveLibraryCatsToSupabase(docType, LIBRARY_CATEGORIES);
   closeLibraryCatManager();
   showToast('✅ 공종 분류가 저장됐어요!');
@@ -2486,13 +2490,14 @@ async function renderLibraryView(el, storageType='library') {
     construction: {label:'시공 관리', icon:'🏗️', catKey:'hj3_lib_cats_construction', bucket:'library'},
   };
   const menu = MENU_INFO[storageType] || MENU_INFO.library;
-  // 카테고리 로드 - Supabase library_categories 테이블 우선
-  const sbCats = await loadLibraryCatsFromSupabase(storageType);
-  if(sbCats && Array.isArray(sbCats) && sbCats.length > 0) {
-    LIBRARY_CATEGORIES = sbCats;
-  } else {
-    LIBRARY_CATEGORIES = [...(LIB_DEFAULT_CATS[storageType] || LIB_DEFAULT_CATS.library)];
+  // 카테고리 로드 - 캐시 우선, 없으면 Supabase
+  if(!LIB_CAT_CACHE[storageType]) {
+    const sbCats = await loadLibraryCatsFromSupabase(storageType);
+    LIB_CAT_CACHE[storageType] = (sbCats && sbCats.length > 0)
+      ? sbCats
+      : [...(LIB_DEFAULT_CATS[storageType] || LIB_DEFAULT_CATS.library)];
   }
+  LIBRARY_CATEGORIES = LIB_CAT_CACHE[storageType];
 
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">불러오는 중...</div>';
   await loadLibraryDocs(storageType);
@@ -2552,9 +2557,7 @@ async function renderLibraryView(el, storageType='library') {
                   onclick="openLibraryDoc('${doc.id}')">
                   <div style="height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;position:relative">
                     <img src="" data-path="${doc.file_path}" class="lib-thumb"
-                      style="width:100%;height:100%;object-fit:cover;display:none"
-                      onload="this.style.display='block';this.previousElementSibling.style.display='none'">
-                    <div style="font-size:32px">📄</div>
+                      style="width:100%;height:100%;object-fit:cover">
                   </div>
                   <div style="padding:10px 12px">
                     <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:3px">${doc.category}</div>
