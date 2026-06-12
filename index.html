@@ -649,7 +649,6 @@ let rooms = JSON.parse(localStorage.getItem('hj3_rooms') || JSON.stringify([
 ]));
 let messages = JSON.parse(localStorage.getItem('hj3_msgs') || '[]');
 let todos = JSON.parse(localStorage.getItem('hj3_todos') || '[]');
-let starredRooms = JSON.parse(localStorage.getItem('hj3_starred') || '[]');
 
 let currentView = 'dashboard';
 let selectedCategory = null;
@@ -667,8 +666,6 @@ let customEvents = JSON.parse(localStorage.getItem('hj3_custom_events') || '[]')
 let editingEventId = null;
 
 // 휴무/근무 설정
-let offDays = JSON.parse(localStorage.getItem('hj3_off_days') || '[]');
-let workSaturdays = JSON.parse(localStorage.getItem('hj3_work_sat') || '[]');
 
 // 앱 설정
 let appSettings = JSON.parse(localStorage.getItem('hj3_settings') || JSON.stringify({
@@ -714,10 +711,7 @@ function save() {
   localStorage.setItem('hj3_rooms', JSON.stringify(rooms));
   localStorage.setItem('hj3_msgs', JSON.stringify(messages));
   localStorage.setItem('hj3_todos', JSON.stringify(todos));
-  localStorage.setItem('hj3_starred', JSON.stringify(starredRooms));
   localStorage.setItem('hj3_custom_events', JSON.stringify(customEvents));
-  localStorage.setItem('hj3_off_days', JSON.stringify(offDays));
-  localStorage.setItem('hj3_work_sat', JSON.stringify(workSaturdays));
   localStorage.setItem('hj3_settings', JSON.stringify(appSettings));
   updateStats();
   renderSidebar();
@@ -1647,7 +1641,7 @@ function closeTodoDetail() {
 
 // ===== 백업/복원/엑셀 =====
 function exportBackup() {
-  const data={version:2,exportedAt:new Date().toISOString(),rooms,messages,todos,starredRooms};
+  const data={version:2,exportedAt:new Date().toISOString(),rooms,messages,todos};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download=`현장톡_백업_${todayKey()}.json`;a.click();
@@ -1664,7 +1658,7 @@ function importBackup() {
       const data=JSON.parse(text);
       if(!data.rooms||!data.messages){showToast('❌ 올바른 백업 파일이 아니에요');return;}
       if(!confirm(`복원할까요?\n메시지 ${data.messages.length}건, 할일 ${data.todos?.length||0}건`)) return;
-      rooms=data.rooms||[];messages=data.messages||[];todos=data.todos||[];starredRooms=data.starredRooms||[];
+      rooms=data.rooms||[];messages=data.messages||[];todos=data.todos||[];
       save();setView('dashboard');showToast('✅ 복원 완료!');
     }catch{showToast('❌ 파일 읽기 오류');}
   };
@@ -2729,36 +2723,37 @@ function printLibraryDoc() {
   const meta = document.getElementById('lib-view-meta').textContent;
   if(!imgSrc) { showToast('이미지를 불러오는 중이에요. 잠시 후 다시 시도해주세요.'); return; }
 
-  const printWin = window.open('', '_blank', 'width=1000,height=800');
+  const printWin = window.open('', '_blank', 'width=1100,height=850,resizable=yes');
   const doc = printWin.document;
   doc.open();
   doc.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + '</title>');
   doc.write('<style>');
   doc.write('* { margin:0; padding:0; box-sizing:border-box; }');
-  // 화면 미리보기
-  doc.write('@media screen {');
-  doc.write('  body { font-family:sans-serif; background:#f0f0f0; }');
-  doc.write('  .toolbar { background:#fff; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid #ddd; position:sticky; top:0; z-index:10; }');
-  doc.write('  .toolbar h1 { font-size:13px; font-weight:700; color:#1a2332; }');
-  doc.write('  .toolbar p { font-size:11px; color:#64748b; margin-top:2px; }');
-  doc.write('  .img-wrap { padding:20px; display:flex; justify-content:center; }');
-  doc.write('  img { max-width:100%; height:auto; box-shadow:0 2px 12px rgba(0,0,0,.15); background:#fff; }');
-  doc.write('}');
-  // 인쇄
+  doc.write('body { font-family:sans-serif; background:#e8e8e8; }');
+  doc.write('.toolbar { position:fixed; top:0; left:0; right:0; background:#1a2332; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; z-index:100; }');
+  doc.write('.toolbar h1 { color:#fff; font-size:13px; font-weight:700; }');
+  doc.write('.toolbar p { color:rgba(255,255,255,.6); font-size:11px; margin-top:2px; }');
+  doc.write('.hint { color:rgba(255,255,255,.5); font-size:11px; margin-right:10px; }');
+  doc.write('.btn-print { border:none; background:#3b82f6; color:#fff; border-radius:6px; padding:8px 18px; font-size:13px; cursor:pointer; font-weight:700; }');
+  doc.write('.page { margin-top:60px; padding:20px; display:flex; justify-content:center; }');
+  doc.write('img { display:block; max-width:100%; height:auto; box-shadow:0 4px 16px rgba(0,0,0,.2); background:#fff; }');
   doc.write('@media print {');
+  doc.write('  body { background:#fff; }');
   doc.write('  .toolbar { display:none !important; }');
+  doc.write('  .page { margin:0; padding:0; display:block; }');
+  doc.write('  img { width:100%; height:auto; box-shadow:none; }');
   doc.write('  @page { margin:5mm; size:auto; }');
-  doc.write('  body { margin:0; padding:0; }');
-  doc.write('  .img-wrap { padding:0; display:block; }');
-  doc.write('  img { width:100%; height:auto; display:block; }');
   doc.write('  body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }');
   doc.write('}');
   doc.write('</style></head><body>');
   doc.write('<div class="toolbar">');
-  doc.write('<div><h1>' + title + '</h1><p>' + meta + '</p></div>');
-  doc.write('<button onclick="window.print()" style="border:none;background:#1a2332;color:#fff;border-radius:6px;padding:8px 18px;font-size:13px;cursor:pointer;font-weight:700">🖨️ 인쇄</button>');
+  doc.write('  <div><h1>' + title + '</h1><p>' + meta + '</p></div>');
+  doc.write('  <div style="display:flex;align-items:center">');
+  doc.write('    <span class="hint">💡 인쇄 설정에서 여백을 "없음"으로 하면 1장으로 출력돼요</span>');
+  doc.write('    <button class="btn-print" onclick="window.print()">🖨️ 인쇄</button>');
+  doc.write('  </div>');
   doc.write('</div>');
-  doc.write('<div class="img-wrap"><img src="' + imgSrc + '"></div>');
+  doc.write('<div class="page"><img src="' + imgSrc + '"></div>');
   doc.write('</body></html>');
   doc.close();
 }
