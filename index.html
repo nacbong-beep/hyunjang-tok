@@ -2745,6 +2745,17 @@ async function renderLibraryView(el, storageType='library') {
 
       <!-- 오른쪽: 자료 목록 -->
       <div>
+        <!-- 검색창 -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);padding:10px 14px">
+          <span style="font-size:15px;color:var(--soft)">🔍</span>
+          <input id="lib-search-input" type="text" placeholder="제목, 파일명, 카테고리 검색..."
+            oninput="renderLibrarySearch(this.value,'${storageType}')"
+            style="flex:1;border:none;background:transparent;font-size:13px;color:var(--text);outline:none;font-family:inherit">
+          <span id="lib-search-count" style="font-size:11px;color:var(--soft);white-space:nowrap"></span>
+          <button onclick="document.getElementById('lib-search-input').value='';renderLibrarySearch('','${storageType}')"
+            style="border:none;background:none;color:var(--soft);font-size:14px;cursor:pointer;padding:0 2px">&#x2715;</button>
+        </div>
+
         <!-- 드롭존 -->
         <div id="lib-dropzone" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
           ondragleave="this.style.borderColor='var(--border2)'"
@@ -2761,7 +2772,7 @@ async function renderLibraryView(el, storageType='library') {
         <!-- 자료 그리드 -->
         ${filtered.length === 0
           ? '<div class="empty-box"><div class="empty-icon">📂</div><div class="empty-text">자료가 없습니다. 이미지를 업로드해주세요.</div></div>'
-          : `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
+          : `<div id="lib-doc-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px">
               ${filtered.map(doc => `
                 <div class="panel" style="padding:0;overflow:hidden;cursor:pointer;transition:all 0.2s"
                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow2)'"
@@ -2835,6 +2846,58 @@ async function renderLibraryView(el, storageType='library') {
   // 뷰어 모달은 body에 고정
 
   // 썸네일 지연 로드
+  setTimeout(() => loadLibraryThumbs(), 100);
+}
+
+function renderLibrarySearch(q, storageType) {
+  const countEl = document.getElementById('lib-search-count');
+  if(!q.trim()) {
+    // 검색어 없으면 전체 표시
+    document.getElementById('lib-doc-grid') && renderLibraryGrid(libraryDocs, storageType);
+    if(countEl) countEl.textContent = '';
+    return;
+  }
+  const lower = q.toLowerCase();
+  const results = libraryDocs.filter(doc => {
+    const catLabel = getCatLabel(doc.category).toLowerCase();
+    return (doc.title||'').toLowerCase().includes(lower)
+      || (doc.file_name||'').toLowerCase().includes(lower)
+      || (doc.category||'').toLowerCase().includes(lower)
+      || catLabel.includes(lower)
+      || (doc.memo||'').toLowerCase().includes(lower);
+  });
+  if(countEl) countEl.textContent = results.length + '건';
+  renderLibraryGrid(results, storageType, q);
+}
+
+function renderLibraryGrid(docs, storageType, searchQ='') {
+  const gridEl = document.getElementById('lib-doc-grid');
+  if(!gridEl) return;
+  if(!docs.length) {
+    gridEl.innerHTML = '<div class="empty-box"><div class="empty-icon">📂</div><div class="empty-text">' + (searchQ ? '검색 결과가 없어요.' : '자료가 없습니다.') + '</div></div>';
+    return;
+  }
+  gridEl.innerHTML = docs.map(doc => {
+    const catLabel = getCatLabel(doc.category);
+    const title = searchQ ? doc.title.replace(new RegExp(searchQ.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), m=>`<mark style="background:#fef08a;color:#1a2332;border-radius:2px">${m}</mark>`) : doc.title;
+    return `<div class="panel" style="padding:0;overflow:hidden;cursor:pointer;transition:all 0.2s"
+        onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='var(--shadow2)'"
+        onmouseout="this.style.transform='';this.style.boxShadow=''"
+        onclick="openLibraryDoc('${doc.id}')">
+        <div style="height:120px;background:var(--bg);display:flex;align-items:center;justify-content:center;position:relative">
+          <img src="" data-path="${doc.file_path}" class="lib-thumb"
+            style="width:100%;height:100%;object-fit:cover"
+            onload="this.style.display='block'"
+            onerror="this.style.display='none'">
+        </div>
+        <div style="padding:10px 12px">
+          <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:3px">${catLabel}</div>
+          <div style="font-size:13px;font-weight:700;line-height:1.4;color:var(--text)">${title}</div>
+          <div style="font-size:11px;color:var(--soft);margin-top:4px">${new Date(doc.created_at).toLocaleDateString('ko-KR')}</div>
+          ${doc.memo?`<div style="font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${doc.memo}</div>`:''}
+        </div>
+      </div>`;
+  }).join('');
   setTimeout(() => loadLibraryThumbs(), 100);
 }
 
