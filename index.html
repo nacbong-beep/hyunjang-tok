@@ -2342,7 +2342,7 @@ async function renderWeeklyView(el) {
                 // 날씨: 저장된 값 없으면 자동 날씨 데이터 표시
                 const autoWeather = isWeather && weatherData && weatherData[d.key] ? weatherData[d.key] : '';
                 if(isWeather && !val && autoWeather) val = autoWeather;
-                const minH = isWeather ? '36px' : '72px';
+                const minH = isWeather ? '18px' : '72px';
                 return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg}">
                   ${isWeather && autoWeather ? `<div style="font-size:10px;color:#0369a1;padding:2px 8px 0;font-weight:600">${autoWeather}</div>` : ''}
                   <textarea id="${cellId}"
