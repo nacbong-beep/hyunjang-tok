@@ -1994,6 +1994,41 @@ function getWeeklyCell(wk, row, dateKey) {
   return (weeklyData[wk] || {})[row+':'+dateKey] || '';
 }
 
+// localStorage만 저장 (Supabase 저장 안함)
+function setWeeklyCellLocal(wk, row, dateKey, val) {
+  if(!weeklyData[wk]) weeklyData[wk] = {};
+  weeklyData[wk][row+':'+dateKey] = val;
+  localStorage.setItem('hj3_weekly', JSON.stringify(weeklyData));
+  // 저장 버튼 강조
+  const btn = document.getElementById('weekly-save-btn');
+  if(btn) { btn.style.background = '#f59e0b'; btn.textContent = '💾 저장 (변경됨)'; }
+}
+
+// 전체 저장 버튼 클릭 시 Supabase에 저장
+async function saveWeeklyAll() {
+  const btn = document.getElementById('weekly-save-btn');
+  if(btn) { btn.textContent = '저장 중...'; btn.disabled = true; }
+  const wk = weekKey(weeklyOffset);
+  const token = localStorage.getItem('hj_token') || SUPABASE_KEY;
+  let userId = null;
+  try { userId = JSON.parse(atob(token.split('.')[1])).sub; } catch(e) {}
+  const saves = [];
+  if(weeklyData[wk]) {
+    for(const key of Object.keys(weeklyData[wk])) {
+      const [row, dateKey] = key.split(':');
+      const val = weeklyData[wk][key];
+      saves.push(sbFetch('weekly_report', 'POST', {
+        user_id: userId, week_key: wk,
+        row_name: row, date_key: dateKey,
+        content: val, updated_at: new Date().toISOString()
+      }));
+    }
+  }
+  await Promise.all(saves);
+  if(btn) { btn.style.background = '#10b981'; btn.textContent = '💾 저장'; btn.disabled = false; }
+  showToast('✅ 저장됐어요!');
+}
+
 function setWeeklyCell(wk, row, dateKey, val) {
   if(!weeklyData[wk]) weeklyData[wk] = {};
   weeklyData[wk][row+':'+dateKey] = val;
@@ -2288,6 +2323,7 @@ async function renderWeeklyView(el) {
           <button onclick="copyWeeklyText()" class="btn-ghost" style="padding:7px 12px;font-size:12px">📋 복사</button>
           <button onclick="shareWeeklyImage()" class="btn-ghost" style="padding:7px 12px;font-size:12px">🖼️ 이미지</button>
           <button onclick="toggleWeeklySearch()" class="btn-ghost" style="padding:7px 12px;font-size:12px">🔍 검색</button>
+          <button id="weekly-save-btn" onclick="saveWeeklyAll()" class="btn-primary" style="padding:7px 14px;font-size:12px;background:#10b981">💾 저장</button>
         </div>
       </div>
       <div id="weekly-search-bar" style="display:none;padding:0 0 14px">
@@ -2349,8 +2385,8 @@ async function renderWeeklyView(el) {
                     style="width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:none;outline:none;font-family:inherit;transition:border 0.15s"
                     onfocus="this.style.cssText='width:100%;min-height:${minH};border:1px solid var(--primary);border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:none;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
                     onblur="this.style.cssText='width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:none;outline:none;font-family:inherit'"
-                    onchange="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
-                    oninput="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
+                    onchange="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
+                    oninput="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
                     placeholder="">${isWeather?'':val}</textarea>
                 </td>`;
               }).join('')}
