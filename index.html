@@ -2383,7 +2383,7 @@ async function renderWeeklyView(el) {
             ${['날씨','일정','작업사항','검측사항','확인사항','서류사항','기타'].map((row, ri) => {
               const isWeather = row === '날씨';
               const isSchedule = row === '일정';
-              const ROW_H = '100px';
+              const ROW_H = '120px';
               const rowBg = isWeather?'#f0f7ff':isSchedule?'#f5f3ff':(ri%2===0?'var(--card)':'var(--surface)');
               const labelColor = isWeather?'#185FA5':isSchedule?'#534AB7':'var(--primary)';
               const labelBg = isWeather?'#e6f1fb':isSchedule?'#eeedfe':'var(--bg)';
