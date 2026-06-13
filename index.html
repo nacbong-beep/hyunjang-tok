@@ -1994,7 +1994,31 @@ function getWeeklyCell(wk, row, dateKey) {
   return (weeklyData[wk] || {})[row+':'+dateKey] || '';
 }
 
-// localStorage + Supabase 자동저장
+// 셀 클릭 → 편집모드 전환
+function focusWeeklyCell(cellId, viewId) {
+  const ta = document.getElementById(cellId);
+  const view = document.getElementById(viewId);
+  if(!ta || !view) return;
+  view.style.display = 'none';
+  ta.style.display = 'block';
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+
+// 셀 포커스 아웃 → 보기모드 전환 (점 목록 렌더링)
+function blurWeeklyCell(cellId, viewId, wk, row, dateKey) {
+  const ta = document.getElementById(cellId);
+  const view = document.getElementById(viewId);
+  if(!ta || !view) return;
+  const val = ta.value;
+  const dotList = val ? val.split('\n').filter(v=>v.trim()).map(v=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#1a2332;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;color:var(--text);line-height:1.5">${v.trim()}</span></div>`).join('') : '';
+  view.innerHTML = dotList;
+  view.style.display = 'flex';
+  view.style.flexDirection = 'column';
+  ta.style.display = 'none';
+}
+
+// localStorage만 저장 (Supabase 저장 안함)
 function setWeeklyCellLocal(wk, row, dateKey, val) {
   if(!weeklyData[wk]) weeklyData[wk] = {};
   weeklyData[wk][row+':'+dateKey] = val;
@@ -2002,9 +2026,6 @@ function setWeeklyCellLocal(wk, row, dateKey, val) {
   // 저장 버튼 강조
   const btn = document.getElementById('weekly-save-btn');
   if(btn) { btn.style.background = '#f59e0b'; btn.textContent = '💾 저장 (변경됨)'; }
-  // 디바운스 자동저장
-  clearTimeout(weeklySaveTimer);
-  weeklySaveTimer = setTimeout(() => saveWeeklyCellToSupabase(wk, row, dateKey, val), 1000);
 }
 
 // 전체 저장 버튼 클릭 시 Supabase에 저장
@@ -2362,45 +2383,57 @@ async function renderWeeklyView(el) {
             ${['날씨','일정','작업사항','검측사항','확인사항','서류사항','기타'].map((row, ri) => {
               const isWeather = row === '날씨';
               const isSchedule = row === '일정';
-              const rowColors = {날씨:'#e0f2fe', 일정:'#f3e8ff'};
-              const rowBg = rowColors[row] || (ri%2===0?'var(--card)':'var(--surface)');
+              const ROW_H = '120px';
+              const rowBg = isWeather?'#f0f7ff':isSchedule?'#f5f3ff':(ri%2===0?'var(--card)':'var(--surface)');
+              const labelColor = isWeather?'#185FA5':isSchedule?'#534AB7':'var(--primary)';
+              const labelBg = isWeather?'#e6f1fb':isSchedule?'#eeedfe':'var(--bg)';
               return `
-            <tr style="background:${rowBg}">
-              <td style="font-weight:800;font-size:11px;text-align:center;white-space:nowrap;padding:12px 8px;color:${isWeather?'#0369a1':isSchedule?'#7c3aed':'var(--primary)'};border-right:2px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:.3px;vertical-align:middle">
+            <tr>
+              <td style="font-weight:700;font-size:11px;text-align:center;white-space:nowrap;padding:0 8px;color:${labelColor};border-right:2px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:.3px;vertical-align:middle;background:${labelBg};height:${ROW_H};min-width:64px">
                 ${isWeather?'🌤️ 날씨':isSchedule?'📅 일정':row}
               </td>
               ${days.map(d => {
                 const isToday = d.key === todayKey();
-                const bg = isToday ? (isWeather?'#bae6fd':isSchedule?'#ede9fe':'#f8faff') : '';
+                const todayBg = isToday?(isWeather?'#bae6fd':isSchedule?'#ede9fe':'#f0f4ff'):'';
+                const cellBg = todayBg || rowBg;
+
+                if(isWeather) {
+                  const autoWeather = weatherData && weatherData[d.key] ? weatherData[d.key] : '-';
+                  return `<td style="padding:8px 10px;vertical-align:middle;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H}">
+                    <div style="font-size:12px;color:#185FA5;font-weight:600;line-height:1.5">${autoWeather}</div>
+                  </td>`;
+                }
+
                 if(isSchedule) {
-                  // 캘린더 일정 자동 표시
                   const dayEvents = [
                     ...messages.filter(m=>(m.eventDate||m.messageDate)===d.key&&normalizeTag(m.tag)==='일정').map(m=>m.summary),
                     ...customEvents.filter(e=>{const s=e.date,en=e.endDate||e.date;return d.key>=s&&d.key<=en;}).map(e=>e.title)
                   ];
-                  return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg||'#f3e8ff'}">
-                    <div style="min-height:40px;font-size:11px;line-height:1.6;color:#7c3aed;font-weight:600;padding:4px">
-                      ${dayEvents.length ? dayEvents.map(e=>`<div style="margin-bottom:2px">• ${e}</div>`).join('') : '<span style="color:var(--soft);font-weight:400">-</span>'}
-                    </div>
+                  return `<td style="padding:8px 10px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H}">
+                    ${dayEvents.length
+                      ? dayEvents.map(e=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#534AB7;flex-shrink:0;margin-top:5px"></div><span style="font-size:11px;color:#534AB7;line-height:1.5">${e}</span></div>`).join('')
+                      : '<span style="font-size:11px;color:var(--soft)">-</span>'}
                   </td>`;
                 }
+
+                // 일반 셀: 보기모드(점목록) / 편집모드(textarea) 전환
                 const cellId = 'wcell_'+row+'_'+d.key;
-                let val = getWeeklyCell(wk, row, d.key);
-                // 날씨: 저장된 값 없으면 자동 날씨 데이터 표시
-                const autoWeather = isWeather && weatherData && weatherData[d.key] ? weatherData[d.key] : '';
-                if(isWeather && !val && autoWeather) val = autoWeather;
-                const minH = isWeather ? '18px' : '72px';
-                return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg}">
-                  ${isWeather
-                    ? `<div style="font-size:11px;color:#0369a1;font-weight:700;padding:6px 8px;line-height:1.4">${autoWeather||'-'}</div>`
-                    : `<textarea id="${cellId}"
-                        style="width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit;transition:border 0.15s"
-                        onfocus="this.style.cssText='width:100%;min-height:72px;border:1px solid var(--primary);border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
-                        onblur="this.style.cssText='width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit'"
-                        onchange="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
-                        oninput="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
-                        placeholder="">${val}</textarea>`
-                  }
+                const viewId = 'wview_'+row+'_'+d.key;
+                const val = getWeeklyCell(wk, row, d.key);
+                const isEmpty = !val;
+                const dotList = val ? val.split('\n').filter(v=>v.trim()).map(v=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#1a2332;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;color:var(--text);line-height:1.5">${v.trim()}</span></div>`).join('') : '';
+
+                return `<td style="padding:0;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${isEmpty?(isToday?'#f0f4ff':'var(--surface)'):cellBg};height:${ROW_H};cursor:text"
+                  onclick="focusWeeklyCell('${cellId}','${viewId}')">
+                  <div id="${viewId}" style="padding:8px 10px;min-height:${ROW_H};display:flex;flex-direction:column;justify-content:flex-start">
+                    ${dotList || ''}
+                  </div>
+                  <textarea id="${cellId}"
+                    style="display:none;width:100%;height:${ROW_H};border:2px solid var(--primary);border-radius:0;padding:8px 10px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:none;outline:none;font-family:inherit;box-shadow:inset 0 0 0 2px rgba(26,35,50,.08)"
+                    onblur="blurWeeklyCell('${cellId}','${viewId}','${wk}','${row}','${d.key}')"
+                    onchange="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
+                    oninput="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
+                    >${val}</textarea>
                 </td>`;
               }).join('')}
             </tr>`;
