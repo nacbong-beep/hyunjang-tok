@@ -1956,6 +1956,21 @@ function formatWeekDate(d) {
   return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// 하위 카테고리의 상위 카테고리 찾기
+function getParentCatName(category) {
+  for(const c of LIBRARY_CATEGORIES) {
+    if(typeof c === 'object' && c.children && c.children.includes(category)) {
+      return c.name;
+    }
+  }
+  return null;
+}
+
+function getCatLabel(category) {
+  const parent = getParentCatName(category);
+  return parent ? `${parent} · ${category}` : category;
+}
+
 // ===== 날씨 자동 로드 (Open-Meteo) =====
 const WEATHER_ICONS = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',73:'❄️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
 const WEATHER_DESC = {0:'맑음',1:'대체로맑음',2:'구름조금',3:'흐림',45:'안개',48:'안개',51:'이슬비',53:'이슬비',55:'이슬비',61:'비',63:'비',65:'강한비',71:'눈',73:'눈',75:'폭설',80:'소나기',81:'소나기',82:'강한소나기',95:'뇌우',96:'뇌우',99:'강한뇌우'};
@@ -2757,7 +2772,7 @@ async function renderLibraryView(el, storageType='library') {
                       style="width:100%;height:100%;object-fit:cover">
                   </div>
                   <div style="padding:10px 12px">
-                    <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:3px">${doc.category}</div>
+                    <div style="font-size:11px;color:var(--accent);font-weight:700;margin-bottom:3px">${getCatLabel(doc.category)}</div>
                     <div style="font-size:13px;font-weight:700;line-height:1.4;color:var(--text)">${doc.title}</div>
                     <div style="font-size:11px;color:var(--soft);margin-top:4px">${new Date(doc.created_at).toLocaleDateString('ko-KR')}</div>
                     ${doc.memo?`<div style="font-size:11px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${doc.memo}</div>`:''}
