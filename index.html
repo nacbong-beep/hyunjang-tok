@@ -2872,8 +2872,9 @@ async function openLibraryDoc(id) {
   const modal = document.getElementById('lib-view-modal');
   modal.style.display = 'flex';
   document.getElementById('lib-view-title').textContent = doc.title;
-  document.getElementById('lib-view-meta').textContent =
-    `${doc.category} · ${new Date(doc.created_at).toLocaleDateString('ko-KR')}${doc.memo?' · '+doc.memo:''}`;
+  document.getElementById('lib-view-meta').innerHTML =
+    `${doc.category} · ${new Date(doc.created_at).toLocaleDateString('ko-KR')}${doc.memo?' · '+doc.memo:''}` +
+    (doc.file_name ? `<span style="margin-left:8px;opacity:.6;font-size:11px">📎 ${doc.file_name}</span>` : '');
   document.getElementById('lib-view-img').src = '';
   document.getElementById('lib-view-delete').onclick = () => deleteLibraryDoc(doc.id, doc.file_path);
   const url = await getLibraryFileUrl(doc.file_path);
