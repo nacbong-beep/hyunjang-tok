@@ -2104,11 +2104,14 @@ async function saveWeeklyCellToSupabase(wk, row, dateKey, val) {
 async function loadWeeklyFromSupabase(wk) {
   try {
     const rows = await sbFetch('weekly_report', 'GET', null, `?week_key=eq.${wk}&select=row_name,date_key,content`);
-    if(!rows || !rows.length) return;
-    if(!weeklyData[wk]) weeklyData[wk] = {};
-    rows.forEach(r => {
-      weeklyData[wk][r.row_name+':'+r.date_key] = r.content;
-    });
+    // Supabase 데이터로 완전히 덮어쓰기 (병합 아님)
+    // Supabase에 없는 항목은 빈값으로 처리
+    weeklyData[wk] = {};
+    if(rows && rows.length) {
+      rows.forEach(r => {
+        weeklyData[wk][r.row_name+':'+r.date_key] = r.content;
+      });
+    }
     localStorage.setItem('hj3_weekly', JSON.stringify(weeklyData));
   } catch(e) { console.warn('weekly load error', e); }
 }
