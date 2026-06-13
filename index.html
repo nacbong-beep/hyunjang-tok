@@ -1956,6 +1956,31 @@ function formatWeekDate(d) {
   return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 }
 
+// ===== 날씨 자동 로드 (Open-Meteo) =====
+const WEATHER_ICONS = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'❄️',73:'❄️',75:'❄️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️'};
+const WEATHER_DESC = {0:'맑음',1:'대체로맑음',2:'구름조금',3:'흐림',45:'안개',48:'안개',51:'이슬비',53:'이슬비',55:'이슬비',61:'비',63:'비',65:'강한비',71:'눈',73:'눈',75:'폭설',80:'소나기',81:'소나기',82:'강한소나기',95:'뇌우',96:'뇌우',99:'강한뇌우'};
+
+async function loadWeatherForWeek(days) {
+  try {
+    const startDate = days[0].key;
+    const endDate = days[days.length-1].key;
+    // 평택 좌표
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=37.0&longitude=127.0&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Asia/Seoul&start_date=${startDate}&end_date=${endDate}`);
+    if(!res.ok) return null;
+    const data = await res.json();
+    const result = {};
+    data.daily.time.forEach((date, i) => {
+      const code = data.daily.weathercode[i];
+      const max = Math.round(data.daily.temperature_2m_max[i]);
+      const min = Math.round(data.daily.temperature_2m_min[i]);
+      const icon = WEATHER_ICONS[code] || '🌡️';
+      const desc = WEATHER_DESC[code] || '';
+      result[date] = `${icon} ${desc} ${max}°/${min}°`;
+    });
+    return result;
+  } catch(e) { console.warn('날씨 로드 실패', e); return null; }
+}
+
 function getWeekDays(offset) {
   const {mon} = getWeekRange(offset);
   const days = ['(월)','(화)','(수)','(목)','(금)','(토)'];
@@ -2244,6 +2269,8 @@ async function renderWeeklyView(el) {
   await loadWeeklyFromSupabase(wk);
   const rows = ['작업사항','검측사항','확인사항','서류사항','기타'];
   const {mon, sat} = getWeekRange(weeklyOffset);
+  // 날씨 자동 로드
+  const weatherData = await loadWeatherForWeek(days);
 
 
 
@@ -2311,16 +2338,20 @@ async function renderWeeklyView(el) {
                   </td>`;
                 }
                 const cellId = 'wcell_'+row+'_'+d.key;
-                const val = getWeeklyCell(wk, row, d.key);
+                let val = getWeeklyCell(wk, row, d.key);
+                // 날씨: 저장된 값 없으면 자동 날씨 데이터 표시
+                const autoWeather = isWeather && weatherData && weatherData[d.key] ? weatherData[d.key] : '';
+                if(isWeather && !val && autoWeather) val = autoWeather;
                 const minH = isWeather ? '36px' : '72px';
                 return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg}">
+                  ${isWeather && autoWeather ? `<div style="font-size:10px;color:#0369a1;padding:2px 8px 0;font-weight:600">${autoWeather}</div>` : ''}
                   <textarea id="${cellId}"
-                    style="width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit;transition:border 0.15s"
-                    onfocus="this.style.cssText='width:100%;min-height:${minH};border:1px solid var(--primary);border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
-                    onblur="this.style.cssText='width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit'"
+                    style="width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:none;outline:none;font-family:inherit;transition:border 0.15s"
+                    onfocus="this.style.cssText='width:100%;min-height:${minH};border:1px solid var(--primary);border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:none;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
+                    onblur="this.style.cssText='width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:none;outline:none;font-family:inherit'"
                     onchange="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
                     oninput="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
-                    placeholder="${isWeather?'예) 맑음 25°C':''}">${val}</textarea>
+                    placeholder="${isWeather?'직접 수정 가능':''}">${isWeather?'':val}</textarea>
                 </td>`;
               }).join('')}
             </tr>`;
