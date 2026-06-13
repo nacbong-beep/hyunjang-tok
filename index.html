@@ -2351,7 +2351,7 @@ async function renderWeeklyView(el) {
                     onblur="this.style.cssText='width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:none;outline:none;font-family:inherit'"
                     onchange="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
                     oninput="setWeeklyCell('${wk}','${row}','${d.key}',this.value)"
-                    placeholder="${isWeather?'직접 수정 가능':''}">${isWeather?'':val}</textarea>
+                    placeholder="">${isWeather?'':val}</textarea>
                 </td>`;
               }).join('')}
             </tr>`;
