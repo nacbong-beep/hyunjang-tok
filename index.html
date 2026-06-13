@@ -2380,14 +2380,16 @@ async function renderWeeklyView(el) {
                 if(isWeather && !val && autoWeather) val = autoWeather;
                 const minH = isWeather ? '18px' : '72px';
                 return `<td style="padding:6px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${bg}">
-                  ${isWeather && autoWeather ? `<div style="font-size:10px;color:#0369a1;padding:2px 8px 0;font-weight:600">${autoWeather}</div>` : ''}
-                  <textarea id="${cellId}"
-                    style="width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:none;outline:none;font-family:inherit;transition:border 0.15s"
-                    onfocus="this.style.cssText='width:100%;min-height:${minH};border:1px solid var(--primary);border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:none;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
-                    onblur="this.style.cssText='width:100%;min-height:${minH};border:1px solid transparent;border-radius:var(--radius2);padding:4px 8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:none;outline:none;font-family:inherit'"
-                    onchange="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
-                    oninput="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
-                    placeholder="">${isWeather?'':val}</textarea>
+                  ${isWeather
+                    ? `<div style="font-size:11px;color:#0369a1;font-weight:700;padding:6px 8px;line-height:1.4">${autoWeather||'-'}</div>`
+                    : `<textarea id="${cellId}"
+                        style="width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit;transition:border 0.15s"
+                        onfocus="this.style.cssText='width:100%;min-height:72px;border:1px solid var(--primary);border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:var(--card);color:var(--text);resize:vertical;outline:none;font-family:inherit;box-shadow:0 0 0 3px rgba(26,35,50,.06)'"
+                        onblur="this.style.cssText='width:100%;min-height:72px;border:1px solid transparent;border-radius:var(--radius2);padding:8px;font-size:12px;line-height:1.6;background:transparent;color:var(--text);resize:vertical;outline:none;font-family:inherit'"
+                        onchange="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
+                        oninput="setWeeklyCellLocal('${wk}','${row}','${d.key}',this.value)"
+                        placeholder="">${val}</textarea>`
+                  }
                 </td>`;
               }).join('')}
             </tr>`;
@@ -2395,7 +2397,7 @@ async function renderWeeklyView(el) {
           </tbody>
         </table>
       </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--soft)">※ 셀 클릭 시 편집 가능 · 자동 저장</div>
+
     </div>`;
 }
 
