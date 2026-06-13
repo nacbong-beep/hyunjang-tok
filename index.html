@@ -1994,7 +1994,7 @@ function getWeeklyCell(wk, row, dateKey) {
   return (weeklyData[wk] || {})[row+':'+dateKey] || '';
 }
 
-// localStorage만 저장 (Supabase 저장 안함)
+// localStorage + Supabase 자동저장
 function setWeeklyCellLocal(wk, row, dateKey, val) {
   if(!weeklyData[wk]) weeklyData[wk] = {};
   weeklyData[wk][row+':'+dateKey] = val;
@@ -2002,6 +2002,9 @@ function setWeeklyCellLocal(wk, row, dateKey, val) {
   // 저장 버튼 강조
   const btn = document.getElementById('weekly-save-btn');
   if(btn) { btn.style.background = '#f59e0b'; btn.textContent = '💾 저장 (변경됨)'; }
+  // 디바운스 자동저장
+  clearTimeout(weeklySaveTimer);
+  weeklySaveTimer = setTimeout(() => saveWeeklyCellToSupabase(wk, row, dateKey, val), 1000);
 }
 
 // 전체 저장 버튼 클릭 시 Supabase에 저장
