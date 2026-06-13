@@ -2389,7 +2389,7 @@ async function renderWeeklyView(el) {
               const labelBg = isWeather?'#e6f1fb':isSchedule?'#eeedfe':'var(--bg)';
               return `
             <tr>
-              <td style="font-weight:700;font-size:11px;text-align:center;white-space:nowrap;padding:0 8px;color:${labelColor};border-right:2px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:.3px;vertical-align:middle;background:${labelBg};height:${ROW_H};min-width:64px">
+              <td style="font-weight:700;font-size:11px;text-align:center;white-space:nowrap;padding:0 8px;color:${labelColor};border-right:2px solid var(--border);border-bottom:1px solid var(--border);letter-spacing:.3px;vertical-align:middle;background:${labelBg};height:${isWeather?'40px':ROW_H};min-width:64px">
                 ${isWeather?'🌤️ 날씨':isSchedule?'📅 일정':row}
               </td>
               ${days.map(d => {
@@ -2399,7 +2399,7 @@ async function renderWeeklyView(el) {
 
                 if(isWeather) {
                   const autoWeather = weatherData && weatherData[d.key] ? weatherData[d.key] : '-';
-                  return `<td style="padding:8px 10px;vertical-align:middle;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H}">
+                  return `<td style="padding:6px 10px;vertical-align:middle;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:40px">
                     <div style="font-size:12px;font-weight:500;color:#185FA5;line-height:1.5">${autoWeather}</div>
                   </td>`;
                 }
