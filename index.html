@@ -2011,7 +2011,7 @@ function blurWeeklyCell(cellId, viewId, wk, row, dateKey) {
   const view = document.getElementById(viewId);
   if(!ta || !view) return;
   const val = ta.value;
-  const dotList = val ? val.split('\n').filter(v=>v.trim()).map(v=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#1a2332;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;color:var(--text);line-height:1.5">${v.trim()}</span></div>`).join('') : '';
+  const dotList = val ? val.split('\n').filter(v=>v.trim()).map(v=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#1a2332;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;font-weight:400;color:var(--text);line-height:1.5">${v.trim()}</span></div>`).join('') : '';
   view.innerHTML = dotList;
   view.style.display = 'flex';
   view.style.flexDirection = 'column';
@@ -2383,7 +2383,7 @@ async function renderWeeklyView(el) {
             ${['날씨','일정','작업사항','검측사항','확인사항','서류사항','기타'].map((row, ri) => {
               const isWeather = row === '날씨';
               const isSchedule = row === '일정';
-              const ROW_H = '120px';
+              const ROW_H = '100px';
               const rowBg = isWeather?'#f0f7ff':isSchedule?'#f5f3ff':(ri%2===0?'var(--card)':'var(--surface)');
               const labelColor = isWeather?'#185FA5':isSchedule?'#534AB7':'var(--primary)';
               const labelBg = isWeather?'#e6f1fb':isSchedule?'#eeedfe':'var(--bg)';
@@ -2400,7 +2400,7 @@ async function renderWeeklyView(el) {
                 if(isWeather) {
                   const autoWeather = weatherData && weatherData[d.key] ? weatherData[d.key] : '-';
                   return `<td style="padding:8px 10px;vertical-align:middle;text-align:center;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H}">
-                    <div style="font-size:12px;color:#185FA5;font-weight:600;line-height:1.5">${autoWeather}</div>
+                    <div style="font-size:12px;font-weight:500;color:#185FA5;line-height:1.5">${autoWeather}</div>
                   </td>`;
                 }
 
@@ -2411,7 +2411,7 @@ async function renderWeeklyView(el) {
                   ];
                   return `<td style="padding:8px 10px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H}">
                     ${dayEvents.length
-                      ? dayEvents.map(e=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#534AB7;flex-shrink:0;margin-top:5px"></div><span style="font-size:11px;color:#534AB7;line-height:1.5">${e}</span></div>`).join('')
+                      ? dayEvents.map(e=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#534AB7;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;font-weight:400;color:#534AB7;line-height:1.5">${e}</span></div>`).join('')
                       : '<span style="font-size:11px;color:var(--soft)">-</span>'}
                   </td>`;
                 }
@@ -2421,7 +2421,7 @@ async function renderWeeklyView(el) {
                 const viewId = 'wview_'+row+'_'+d.key;
                 const val = getWeeklyCell(wk, row, d.key);
                 const isEmpty = !val;
-                const dotList = val ? val.split('\n').filter(v=>v.trim()).map(v=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#1a2332;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;color:var(--text);line-height:1.5">${v.trim()}</span></div>`).join('') : '';
+                const dotList = val ? val.split('\n').filter(v=>v.trim()).map(v=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#1a2332;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;font-weight:400;color:var(--text);line-height:1.5">${v.trim()}</span></div>`).join('') : '';
 
                 return `<td style="padding:0;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${isEmpty?(isToday?'#f0f4ff':'var(--surface)'):cellBg};height:${ROW_H};cursor:text"
                   onclick="focusWeeklyCell('${cellId}','${viewId}')">
