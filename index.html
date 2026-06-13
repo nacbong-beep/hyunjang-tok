@@ -2017,11 +2017,19 @@ async function saveWeeklyAll() {
     for(const key of Object.keys(weeklyData[wk])) {
       const [row, dateKey] = key.split(':');
       const val = weeklyData[wk][key];
-      saves.push(sbFetch('weekly_report', 'POST', {
-        user_id: userId, week_key: wk,
-        row_name: row, date_key: dateKey,
-        content: val, updated_at: new Date().toISOString()
-      }));
+      if(val) {
+        // 값 있으면 upsert
+        saves.push(sbFetch('weekly_report', 'POST', {
+          user_id: userId, week_key: wk,
+          row_name: row, date_key: dateKey,
+          content: val, updated_at: new Date().toISOString()
+        }));
+      } else {
+        // 빈 값이면 Supabase에서 삭제
+        saves.push(sbFetch('weekly_report', 'DELETE', null,
+          `?user_id=eq.${userId}&week_key=eq.${wk}&row_name=eq.${encodeURIComponent(row)}&date_key=eq.${dateKey}`
+        ));
+      }
     }
   }
   await Promise.all(saves);
