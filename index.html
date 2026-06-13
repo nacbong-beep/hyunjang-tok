@@ -2792,7 +2792,17 @@ async function renderLibraryView(el, storageType='library') {
           <span style="color:var(--soft);font-size:13px">이미지 미리보기</span>
         </div>
         <select class="modal-input" id="lib-cat-input">
-          ${LIBRARY_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
+          ${(() => {
+            const opts = [];
+            LIBRARY_CATEGORIES.forEach(c => {
+              const name = typeof c === 'string' ? c : c.name;
+              opts.push(`<option value="${name}">${name}</option>`);
+              if(typeof c === 'object' && c.children) {
+                c.children.forEach(child => opts.push(`<option value="${child}">&nbsp;&nbsp;└ ${child}</option>`));
+              }
+            });
+            return opts.join('');
+          })()}
         </select>
         <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">파일명 <span style="font-weight:400;color:var(--soft)">(저장될 이름)</span></label>
         <input class="modal-input" id="lib-filename-input" placeholder="파일명" style="margin-bottom:8px">
@@ -2988,7 +2998,16 @@ function openLibraryEditModal() {
   if(!doc) return;
   // 카테고리 옵션 채우기
   const sel = document.getElementById('lib-edit-cat');
-  sel.innerHTML = LIBRARY_CATEGORIES.map(c => `<option value="${c}" ${c===doc.category?'selected':''}>${c}</option>`).join('');
+  // 트리형 카테고리 - 상위/하위 모두 옵션으로 표시
+  const flatCats = [];
+  LIBRARY_CATEGORIES.forEach(c => {
+    const name = typeof c === 'string' ? c : c.name;
+    flatCats.push(name);
+    if(typeof c === 'object' && c.children) {
+      c.children.forEach(child => flatCats.push(child));
+    }
+  });
+  sel.innerHTML = flatCats.map(c => `<option value="${c}" ${c===doc.category?'selected':''}>${c}</option>`).join('');
   document.getElementById('lib-edit-title').value = doc.title || '';
   document.getElementById('lib-edit-memo').value = doc.memo || '';
   document.getElementById('lib-edit-modal').style.display = 'flex';
