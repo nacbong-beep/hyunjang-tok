@@ -3007,7 +3007,15 @@ function openLibraryEditModal() {
       c.children.forEach(child => flatCats.push(child));
     }
   });
-  sel.innerHTML = flatCats.map(c => `<option value="${c}" ${c===doc.category?'selected':''}>${c}</option>`).join('');
+  const opts = [];
+  LIBRARY_CATEGORIES.forEach(c => {
+    const name = typeof c === 'string' ? c : c.name;
+    opts.push(`<option value="${name}" ${name===doc.category?'selected':''}>${name}</option>`);
+    if(typeof c === 'object' && c.children) {
+      c.children.forEach(child => opts.push(`<option value="${child}" ${child===doc.category?'selected':''}>&nbsp;&nbsp;└ ${child}</option>`));
+    }
+  });
+  sel.innerHTML = opts.join('');
   document.getElementById('lib-edit-title').value = doc.title || '';
   document.getElementById('lib-edit-memo').value = doc.memo || '';
   document.getElementById('lib-edit-modal').style.display = 'flex';
