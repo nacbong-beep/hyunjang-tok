@@ -165,7 +165,7 @@ a{color:inherit;text-decoration:none}
 .cal-cell.holiday{background:#fff8f8}
 .cal-cell.holiday .cal-date{color:#ef4444}
 .holiday-name{font-size:9px;color:#ef4444;font-weight:700;margin-bottom:2px;line-height:1.2}
-.cal-event{display:block;font-size:10px;font-weight:700;line-height:1.5;padding:2px 6px;border-radius:4px;margin:0 -6px 2px -6px;white-space:nowrap;overflow:hidden;text-overflow:clip;cursor:pointer;position:relative}
+.cal-event{display:block;font-size:10px;font-weight:700;line-height:1.5;padding:2px 6px;border-radius:4px;margin:0 -6px 2px -6px;white-space:nowrap;overflow:hidden;text-overflow:clip;cursor:pointer;position:relative;border:none;box-shadow:none}
 .cal-event:hover::after{content:attr(title);position:absolute;left:0;top:100%;background:#1a2332;color:#fff;padding:4px 8px;border-radius:6px;font-size:11px;white-space:normal;width:160px;z-index:100;box-shadow:0 4px 12px rgba(0,0,0,.2);line-height:1.4;font-weight:600}
 .ev-purple{background:#ede9fe;color:#6d28d9}.ev-green{background:#dcfce7;color:#15803d}.ev-tasel{background:#fff3b0!important;color:#7a6000!important}.ev-range-start{border-radius:6px 0 0 6px!important;margin-right:-6px;padding-right:8px}.ev-range-mid{border-radius:0!important;margin-left:-6px;margin-right:-6px;padding-left:8px;padding-right:8px}.ev-range-end{border-radius:0 6px 6px 0!important;margin-left:-6px;padding-left:8px}.cal-more{font-size:10px;color:var(--muted);font-weight:600;padding:1px 4px;cursor:pointer;}
 .ev-blue{background:#dbeafe;color:#1e40af}.ev-yellow{background:#fef9c3;color:#854d0e}
@@ -1194,19 +1194,20 @@ function drawRangeBarsInCell(y, mo, gridId='cal-grid-main') {
           display:block;
           margin-top:2px;
           margin-bottom:1px;
-          margin-left:${capLeft ? '-4px' : '-6px'};
-          margin-right:${capRight ? '-4px' : '-6px'};
+          margin-left:-6px;
+          margin-right:-6px;
           height:16px;
           background:${color}33;
           color:${color};
-          border-left:${capLeft ? '2px solid '+color : 'none'};
+          border:none;
+          box-shadow:none;
           font-size:10px;
           font-weight:700;
           border-radius:${capLeft ? '4px' : '0'} ${capRight ? '4px' : '0'} ${capRight ? '4px' : '0'} ${capLeft ? '4px' : '0'};
-          padding:1px ${capRight ? '8px' : '0'} 1px ${capLeft ? '8px' : '0'};
+          padding:1px 6px;
           overflow:hidden;
           white-space:nowrap;
-          text-overflow:ellipsis;
+          text-overflow:clip;
           cursor:pointer;
           line-height:14px;
           position:relative;
