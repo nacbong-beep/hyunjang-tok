@@ -2435,12 +2435,19 @@ async function renderWeeklyView(el) {
 
                 if(isSchedule) {
                   const dayEvents = [
-                    ...messages.filter(m=>(m.eventDate||m.messageDate)===d.key&&normalizeTag(m.tag)==='일정').map(m=>m.summary),
-                    ...customEvents.filter(e=>{const s=e.date,en=e.endDate||e.date;return d.key>=s&&d.key<=en;}).map(e=>e.title)
+                    ...messages.filter(m=>(m.eventDate||m.messageDate)===d.key&&normalizeTag(m.tag)==='일정').map(m=>({text:m.summary, isMsg:true})),
+                    ...customEvents.filter(e=>{const s=e.date,en=e.endDate||e.date;return d.key>=s&&d.key<=en;}).map(e=>({text:e.title, color:e.color}))
                   ];
-                  return `<td style="padding:8px 10px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H}">
+                  return `<td style="padding:8px 8px;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H}">
                     ${dayEvents.length
-                      ? dayEvents.map(e=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#534AB7;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;font-weight:400;color:#534AB7;line-height:1.5">${e}</span></div>`).join('')
+                      ? dayEvents.map(e=>{
+                          let bg, c, bd='';
+                          if(e.text && e.text.includes('타설')) { bg='#fff3b0'; c='#7a6000'; bd='border-left:2px solid #f5c518'; }
+                          else if(e.isMsg) { bg='#ede9fe'; c='#6d28d9'; }
+                          else if(e.color && e.color!=='none') { bg=e.color+'22'; c=e.color; bd='border-left:2px solid '+e.color; }
+                          else { bg='#dbeafe'; c='#1e40af'; }
+                          return `<span style="display:block;font-size:11px;font-weight:700;line-height:1.4;padding:2px 6px;border-radius:4px;margin-bottom:3px;background:${bg};color:${c};${bd};white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${e.text}">${e.text}</span>`;
+                        }).join('')
                       : '<span style="font-size:11px;color:var(--soft)">-</span>'}
                   </td>`;
                 }
