@@ -1216,7 +1216,9 @@ function drawRangeBarsInCell(y, mo, gridId='cal-grid-main') {
         bar.textContent = showLabel ? ev.title : '';
         bar.title = ev.title;
         bar.onclick = (e) => { e.stopPropagation(); openEditEventModal(ev.id); };
-        cell.appendChild(bar);
+        // 날짜 다음(기존 일정 위)에 삽입 - 기간 바 위치를 모든 날짜에서 일정하게 유지
+        const ref = cell.querySelector('.cal-event, .cal-more');
+        cell.insertBefore(bar, ref);
       }
       cur.setDate(cur.getDate() + 1);
     }
