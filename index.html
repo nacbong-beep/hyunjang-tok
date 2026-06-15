@@ -1957,6 +1957,21 @@ function weekKey(offset) {
   return dateKey(mon);
 }
 
+// 특정 월의 첫째주로 이동 (해당 월 1일이 포함된 주의 월요일 기준)
+function jumpToMonth(monthStr) {
+  if(!monthStr) return;
+  const [y, m] = monthStr.split('-').map(Number);
+  const firstDay = new Date(y, m-1, 1);
+  const dow = firstDay.getDay();
+  const targetMon = new Date(firstDay);
+  targetMon.setDate(firstDay.getDate() - (dow===0?6:dow-1));
+
+  const {mon: thisMon} = getWeekRange(0);
+  const diffDays = Math.round((targetMon - thisMon) / (24*60*60*1000));
+  weeklyOffset = Math.round(diffDays / 7);
+  renderWeeklyView(document.getElementById('main-content'));
+}
+
 function formatWeekDate(d) {
   return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
 }
@@ -2375,6 +2390,10 @@ async function renderWeeklyView(el) {
           <span style="font-size:14px;font-weight:900;letter-spacing:-.3px;color:var(--text)">${formatWeekDate(mon)} ~ ${formatWeekDate(sat)}</span>
           <button onclick="weeklyOffset++;renderWeeklyView(document.getElementById('main-content'))" class="btn-ghost" style="padding:5px 10px;font-size:13px">▶</button>
           <button onclick="weeklyOffset=0;renderWeeklyView(document.getElementById('main-content'))" class="btn-ghost" style="padding:5px 10px;font-size:12px">이번주</button>
+          <div class="btn-ghost" style="position:relative;display:flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px;cursor:pointer">
+            📅 월 선택
+            <input type="month" onchange="jumpToMonth(this.value)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+          </div>
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="exportWeeklyExcel()" class="btn-ghost" style="padding:7px 12px;font-size:12px">📥 엑셀</button>
