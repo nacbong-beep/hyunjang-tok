@@ -1962,9 +1962,11 @@ function jumpToMonth(monthStr) {
   if(!monthStr) return;
   const [y, m] = monthStr.split('-').map(Number);
   const firstDay = new Date(y, m-1, 1);
-  const dow = firstDay.getDay();
+  const dow = firstDay.getDay(); // 0=일 ~ 6=토
+  // 해당 월 1일 이후(포함) 첫 번째 월요일 = 첫째주 시작일
+  const daysToMon = (8 - dow) % 7;
   const targetMon = new Date(firstDay);
-  targetMon.setDate(firstDay.getDate() - (dow===0?6:dow-1));
+  targetMon.setDate(firstDay.getDate() + daysToMon);
 
   const {mon: thisMon} = getWeekRange(0);
   const diffDays = Math.round((targetMon - thisMon) / (24*60*60*1000));
@@ -2248,16 +2250,12 @@ function searchWeeklyAll(q) {
 }
 
 function goToWeek(wk) {
-  // 해당 주로 이동
-  const mon = new Date(wk);
-  const today = new Date();
-  const todayMon = new Date(today);
-  const day = today.getDay();
-  todayMon.setDate(today.getDate() - (day===0?6:day-1));
-  todayMon.setHours(0,0,0,0);
-  const diffMs = mon - todayMon;
-  const diffWeeks = Math.round(diffMs / (7*24*60*60*1000));
-  weeklyOffset = diffWeeks;
+  // 해당 주로 이동 (getWeekRange와 동일한 KST 기준 '이번주 월요일' 사용)
+  const [wy, wm, wd] = wk.split('-').map(Number);
+  const mon = new Date(wy, wm-1, wd);
+  const {mon: todayMon} = getWeekRange(0);
+  const diffDays = Math.round((mon - todayMon) / (24*60*60*1000));
+  weeklyOffset = Math.round(diffDays / 7);
   toggleWeeklySearch();
   renderWeeklyView(document.getElementById('main-content'));
   showToast(`📅 ${mon.getMonth()+1}월 ${mon.getDate()}일 주로 이동했어요`);
