@@ -1942,7 +1942,9 @@ let weeklyOffset = 0;
 let weeklySaveTimer = null;
 
 function getWeekRange(offset) {
-  const today = new Date();
+  // KST(UTC+9) 기준 '오늘' 날짜를 브라우저 시간대와 무관하게 계산
+  const kstNow = new Date(Date.now() + 9*60*60*1000);
+  const today = new Date(kstNow.getUTCFullYear(), kstNow.getUTCMonth(), kstNow.getUTCDate());
   const day = today.getDay();
   const mon = new Date(today);
   mon.setDate(today.getDate() - (day===0?6:day-1) + offset*7);
@@ -1952,7 +1954,7 @@ function getWeekRange(offset) {
 
 function weekKey(offset) {
   const {mon} = getWeekRange(offset);
-  return mon.toISOString().slice(0,10);
+  return dateKey(mon);
 }
 
 function formatWeekDate(d) {
@@ -2004,7 +2006,7 @@ function getWeekDays(offset) {
   const days = ['(월)','(화)','(수)','(목)','(금)','(토)'];
   return Array.from({length:6}, (_,i) => {
     const d = new Date(mon); d.setDate(mon.getDate()+i);
-    return {date: d, label: `${d.getMonth()+1}-${d.getDate()}${days[i]}`, key: d.toISOString().slice(0,10)};
+    return {date: d, label: `${d.getMonth()+1}-${d.getDate()}${days[i]}`, key: dateKey(d)};
   });
 }
 
@@ -2059,19 +2061,8 @@ async function saveWeeklyAll() {
     for(const key of Object.keys(weeklyData[wk])) {
       const [row, dateKey] = key.split(':');
       const val = weeklyData[wk][key];
-      if(val) {
-        // 값 있으면 upsert
-        saves.push(sbFetch('weekly_report', 'POST', {
-          user_id: userId, week_key: wk,
-          row_name: row, date_key: dateKey,
-          content: val, updated_at: new Date().toISOString()
-        }));
-      } else {
-        // 빈 값이면 Supabase에서 삭제
-        saves.push(sbFetch('weekly_report', 'DELETE', null,
-          `?user_id=eq.${userId}&week_key=eq.${wk}&row_name=eq.${encodeURIComponent(row)}&date_key=eq.${dateKey}`
-        ));
-      }
+      // saveWeeklyCellToSupabase와 동일한 delete-then-insert 방식 사용 (중복 누적 방지)
+      saves.push(saveWeeklyCellToSupabase(wk, row, dateKey, val));
     }
   }
   await Promise.all(saves);
@@ -2098,7 +2089,8 @@ async function saveWeeklyCellToSupabase(wk, row, dateKey, val) {
       'Content-Type': 'application/json'
     };
     // 기존 행 삭제 후 INSERT
-    await fetch(`${SUPABASE_URL}/rest/v1/weekly_report?user_id=eq.${userId}&week_key=eq.${wk}&row_name=eq.${row}&date_key=eq.${dateKey}`, {
+    // week_key와 무관하게 같은 날짜/항목의 모든 행 삭제 (과거 분산 데이터 자동 정리)
+    await fetch(`${SUPABASE_URL}/rest/v1/weekly_report?user_id=eq.${userId}&row_name=eq.${row}&date_key=eq.${dateKey}`, {
       method: 'DELETE', headers
     });
     if(val) {
@@ -2115,9 +2107,11 @@ async function saveWeeklyCellToSupabase(wk, row, dateKey, val) {
   } catch(e) { console.warn('weekly save error', e); }
 }
 
-async function loadWeeklyFromSupabase(wk) {
+async function loadWeeklyFromSupabase(wk, days) {
   try {
-    const rows = await sbFetch('weekly_report', 'GET', null, `?week_key=eq.${wk}&select=row_name,date_key,content`);
+    // week_key가 아닌 date_key(실제 날짜) 기준으로 조회 - 과거 week_key 분산 문제와 무관하게 항상 정확
+    const dateKeys = days.map(d=>d.key).join(',');
+    const rows = await sbFetch('weekly_report', 'GET', null, `?date_key=in.(${dateKeys})&select=row_name,date_key,content`);
     // Supabase 데이터로 완전히 덮어쓰기 (병합 아님)
     // Supabase에 없는 항목은 빈값으로 처리
     weeklyData[wk] = {};
@@ -2365,7 +2359,7 @@ async function renderWeeklyView(el) {
   const days = getWeekDays(weeklyOffset);
   // Supabase에서 최신 데이터 로드 후 렌더
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--muted)">불러오는 중...</div>';
-  await loadWeeklyFromSupabase(wk);
+  await loadWeeklyFromSupabase(wk, days);
   const rows = ['작업사항','검측사항','확인사항','서류사항','기타'];
   const {mon, sat} = getWeekRange(weeklyOffset);
   // 날씨 자동 로드
