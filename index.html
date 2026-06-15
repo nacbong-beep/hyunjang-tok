@@ -2390,10 +2390,7 @@ async function renderWeeklyView(el) {
           <span style="font-size:14px;font-weight:900;letter-spacing:-.3px;color:var(--text)">${formatWeekDate(mon)} ~ ${formatWeekDate(sat)}</span>
           <button onclick="weeklyOffset++;renderWeeklyView(document.getElementById('main-content'))" class="btn-ghost" style="padding:5px 10px;font-size:13px">▶</button>
           <button onclick="weeklyOffset=0;renderWeeklyView(document.getElementById('main-content'))" class="btn-ghost" style="padding:5px 10px;font-size:12px">이번주</button>
-          <div class="btn-ghost" style="position:relative;display:flex;align-items:center;gap:4px;padding:5px 10px;font-size:12px;cursor:pointer">
-            📅 월 선택
-            <input type="month" onchange="jumpToMonth(this.value)" style="position:absolute;inset:0;opacity:0;cursor:pointer">
-          </div>
+          <input type="month" onchange="jumpToMonth(this.value)" class="btn-ghost" style="padding:5px 8px;font-size:12px;border-radius:9px;cursor:pointer;color:var(--muted);font-weight:700" title="이동할 월 선택">
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="exportWeeklyExcel()" class="btn-ghost" style="padding:7px 12px;font-size:12px">📥 엑셀</button>
