@@ -1280,13 +1280,30 @@ function completeChecked() {
 
 // ===== 검색 =====
 function renderSearchView(el) {
-  const results=messages.filter(m=>{
-    const q=searchQuery.trim();
-    return !q||[m.summary,m.content,m.sender,m.roomName,m.tag].join(' ').toLowerCase().includes(q.toLowerCase());
-  });
-  el.innerHTML = `
-    <div class="search-wrap"><input class="search-input" placeholder="키워드, 발신자, 요약 검색..." value="${searchQuery}" oninput="searchQuery=this.value;renderSearchView(document.getElementById('main-content'))"></div>
-    <div class="panel"><div class="panel-head"><div class="panel-title">검색 결과 · ${results.length}건</div></div>${results.map(m=>msgItem(m)).join('')||'<div class="empty-box">검색 결과가 없습니다.</div>'}</div>`;
+  // 입력창은 최초 1회만 생성 (포커스 유지를 위해 innerHTML 교체 금지)
+  if(!el.querySelector('.search-wrap')) {
+    el.innerHTML = `
+      <div class="search-wrap"><input id="search-main-input" class="search-input" placeholder="키워드, 발신자, 요약 검색..."></div>
+      <div id="search-results-panel"></div>`;
+    const inp = el.querySelector('#search-main-input');
+    inp.value = searchQuery;
+    inp.addEventListener('input', function() {
+      searchQuery = this.value;
+      updateSearchResults();
+    });
+    setTimeout(() => inp.focus(), 50);
+  }
+  updateSearchResults();
+}
+
+function updateSearchResults() {
+  const panel = document.getElementById('search-results-panel');
+  if(!panel) return;
+  const q = searchQuery.trim();
+  const results = messages.filter(m =>
+    !q || [m.summary,m.content,m.sender,m.roomName,m.tag].join(' ').toLowerCase().includes(q.toLowerCase())
+  );
+  panel.innerHTML = `<div class="panel"><div class="panel-head"><div class="panel-title">검색 결과 · ${results.length}건</div></div>${results.map(m=>msgItem(m)).join('')||'<div class="empty-box">검색 결과가 없습니다.</div>'}</div>`;
 }
 
 // ===== 채팅방 뷰 =====
