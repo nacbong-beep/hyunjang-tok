@@ -1274,6 +1274,7 @@ function renderCalendarView(el) {
       if(inp) { inp.value = calSearchQuery; }
       if(btn) { btn.style.background='var(--primary)'; btn.style.color='#fff'; btn.style.borderColor='var(--primary)'; }
       updateCalSearchUI();
+      if(calSearchQuery.trim()) updateCalSearchResults(calSearchQuery);
     }
   }, 0);
 }
