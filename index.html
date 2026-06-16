@@ -1034,9 +1034,8 @@ function calendarCard() {
           })();
           return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''} ${calSrchMatch?'cal-search-match':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
             <div class="cal-date" style="${isOffDay?'color:#ef4444':''}">
-              <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:11px;color:#ef4444;font-weight:900;margin-left:3px;vertical-align:middle">휴무</span>':''}${isWorkSat?'<span style="font-size:11px;color:#0f766e;font-weight:900;margin-left:3px;vertical-align:middle">근무</span>':''}
+              <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:11px;color:#ef4444;font-weight:900;margin-left:3px;vertical-align:middle">휴무</span>':''}${isWorkSat?'<span style="font-size:11px;color:#0f766e;font-weight:900;margin-left:3px;vertical-align:middle">근무</span>':''}${holiday?`<span class="holiday-name" style="display:inline;margin-left:3px;margin-bottom:0">${holiday}</span>`:''}
             </div>
-            ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
             ${singleItemsDash.slice(0,3).map(e=>
               e.type==='msg'
                 ? `<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'ev-purple'}" title="${e.title}">${shortTag(e.tag)}</span>`
@@ -1221,9 +1220,8 @@ function renderCalendarView(el) {
           if(savedOrder.length){singleItems.sort((a,b)=>{const ai=savedOrder.indexOf(a.id);const bi=savedOrder.indexOf(b.id);return(ai===-1?999:ai)-(bi===-1?999:bi);});}
           return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
             <div class="cal-date" style="${isOffDay?'color:#ef4444':''}">
-              <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:11px;color:#ef4444;font-weight:900;margin-left:3px">휴무</span>':''}${isWorkSat?'<span style="font-size:11px;color:#0f766e;font-weight:900;margin-left:3px">근무</span>':''}
+              <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:11px;color:#ef4444;font-weight:900;margin-left:3px">휴무</span>':''}${isWorkSat?'<span style="font-size:11px;color:#0f766e;font-weight:900;margin-left:3px">근무</span>':''}${holiday?`<span class="holiday-name" style="display:inline;margin-left:3px;margin-bottom:0">${holiday}</span>`:''}
             </div>
-            ${holiday?`<div class="holiday-name">${holiday}</div>`:''}
             ${singleItems.slice(0,3).map(e=>e.type==='msg'?`<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'ev-purple'}" title="${e.title}">${shortTag(e.tag)}</span>`:`<span class="cal-event ${e.title&&e.title.includes('타설')?'ev-tasel':'custom-ev'}" onclick="event.stopPropagation();openEditEventModal('${e.id}')" title="${e.title}${e.memo?' · '+e.memo:''}" style="${e.color&&e.color!=='none'?'background:'+e.color+'22;color:'+e.color:''}">${e.title}</span>`).join('')}
             ${singleItems.length>3?`<span class="cal-more" onclick="event.stopPropagation();handleDayClick('${dk}')">+${singleItems.length-3} 더보기</span>`:''}
           </div>`;
