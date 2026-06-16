@@ -2480,7 +2480,7 @@ async function renderWeeklyView(el) {
                 const isEmpty = !val;
                 const dotList = val ? val.split('\n').filter(v=>v.trim()).map(v=>`<div style="display:flex;align-items:flex-start;gap:5px;margin-bottom:3px"><div style="width:5px;height:5px;border-radius:50%;background:#1a2332;flex-shrink:0;margin-top:5px"></div><span style="font-size:12px;font-weight:400;color:var(--text);line-height:1.5;word-break:break-all">${v.trim()}</span></div>`).join('') : '';
 
-                return `<td style="padding:0;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${isEmpty?(isToday?'#f0f4ff':'var(--surface)'):cellBg};height:${ROW_H};cursor:text"
+                return `<td style="padding:0;vertical-align:top;border-bottom:1px solid var(--border);border-right:1px solid var(--border);background:${cellBg};height:${ROW_H};cursor:text"
                   onclick="focusWeeklyCell('${cellId}','${viewId}')">
                   <div id="${viewId}" style="padding:8px 10px;min-height:${ROW_H};display:flex;flex-direction:column;justify-content:flex-start">
                     ${dotList}
