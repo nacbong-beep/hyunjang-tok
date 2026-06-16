@@ -155,7 +155,8 @@ a{color:inherit;text-decoration:none}
 .calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));border-bottom:1px solid var(--border)}
 .day-label{padding:8px 4px;text-align:center;font-size:10px;font-weight:800;color:var(--soft);background:var(--bg);border-right:1px solid var(--border);letter-spacing:.5px}
 .day-label:first-child{color:#ef4444}
-.cal-cell{min-height:140px;padding:6px;border-right:1px solid var(--border);border-top:1px solid var(--border);background:var(--card);cursor:pointer;transition:background 0.1s;overflow:visible}
+.cal-cell{min-height:140px;}
+.mini-cal-cell{min-height:90px!important;padding:6px;border-right:1px solid var(--border);border-top:1px solid var(--border);background:var(--card);cursor:pointer;transition:background 0.1s;overflow:visible}
 .cal-cell:hover{background:var(--bg)}
 .cal-cell:nth-child(7n){border-right:none}
 .cal-date{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:4px;min-height:24px;display:flex;align-items:center;gap:2px;white-space:nowrap}
@@ -993,7 +994,7 @@ function calendarCard() {
       <div class="calendar-grid" id="cal-grid-dash">
         ${['일','월','화','수','목','금','토'].map(d=>`<div class="day-label">${d}</div>`).join('')}
         ${cells.map((date,i)=>{
-          if(!date) return '<div class="cal-cell" data-dk=""></div>';
+          if(!date) return '<div class="cal-cell mini-cal-cell" data-dk=""></div>';
           const dk=dateKey(date);
           const dayEvents=events.filter(e=>e.date===dk);
           const dayCustom=getCustomEventsForDate(dk);
@@ -1032,7 +1033,7 @@ function calendarCard() {
             ].join(' ').toLowerCase();
             return q.split(' ').filter(Boolean).every(w=>evTexts.includes(w));
           })();
-          return `<div class="cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''} ${calSrchMatch?'cal-search-match':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
+          return `<div class="cal-cell mini-cal-cell ${isToday?'today':''} ${isSun?'sunday':''} ${holiday?'holiday':''} ${isOffDay?'off-day':''} ${hasCustom&&!isOffDay&&!isWorkSat?'has-custom':''} ${calSrchMatch?'cal-search-match':''}" data-dk="${dk}" onclick="handleDayClick('${dk}')">
             <div class="cal-date" style="${isOffDay?'color:#ef4444':''}">
               <span>${date.getDate()}</span>${isOffDay?'<span style="font-size:11px;color:#ef4444;font-weight:900;margin-left:3px;vertical-align:middle">휴무</span>':''}${isWorkSat?'<span style="font-size:11px;color:#0f766e;font-weight:900;margin-left:3px;vertical-align:middle">근무</span>':''}${holiday?`<span class="holiday-name" style="display:inline;margin-left:3px;margin-bottom:0">${holiday}</span>`:''}
             </div>
